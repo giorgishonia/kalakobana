@@ -207,17 +207,23 @@ function calculateScores(room) {
             
             if (answer.length > 0 && answer.startsWith(room.gameState.currentLetter.toLowerCase())) {
                 isValid = true;
-                points = 20; // Unique answer
                 
-                // Check for duplicates
-                players.forEach(otherPlayer => {
-                    if (otherPlayer.id !== player.id) {
-                        const otherAnswer = (otherPlayer.answers[cat] || '').trim().toLowerCase();
-                        if (otherAnswer === answer) {
-                            points = 10; // Duplicate
+                // Bonus category always gives 30 points (no duplicate penalty)
+                if (cat === 'bonus') {
+                    points = 30;
+                } else {
+                    points = 20; // Unique answer
+                    
+                    // Check for duplicates (only for non-bonus categories)
+                    players.forEach(otherPlayer => {
+                        if (otherPlayer.id !== player.id) {
+                            const otherAnswer = (otherPlayer.answers[cat] || '').trim().toLowerCase();
+                            if (otherAnswer === answer) {
+                                points = 10; // Duplicate
+                            }
                         }
-                    }
-                });
+                    });
+                }
             }
             
             player.categoryScores[cat] = { points, isValid, answer: player.answers[cat] || '' };
