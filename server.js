@@ -652,22 +652,28 @@ io.on('connection', (socket) => {
         const player = room.players.get(currentPlayerId);
         if (!player) return;
         
+        const wasSubmitted = player.hasSubmitted;
         player.answers = answers;
         player.hasSubmitted = true;
         
-        io.to(currentRoomCode).emit('player:submitted', { playerId: currentPlayerId });
+        // Only emit player:submitted once (first time)
+        if (!wasSubmitted) {
+            io.to(currentRoomCode).emit('player:submitted', { playerId: currentPlayerId });
+        }
         
-        // Check if all connected players have submitted
-        let allSubmitted = true;
-        room.players.forEach(p => {
-            if (p.isConnected && !p.hasSubmitted) {
-                allSubmitted = false;
+        // Check if all connected players have submitted (only if not already marked)
+        if (!room.gameState.allAnswersSubmitted) {
+            let allSubmitted = true;
+            room.players.forEach(p => {
+                if (p.isConnected && !p.hasSubmitted) {
+                    allSubmitted = false;
+                }
+            });
+            
+            if (allSubmitted) {
+                room.gameState.allAnswersSubmitted = true;
+                io.to(currentRoomCode).emit('all:submitted');
             }
-        });
-        
-        if (allSubmitted) {
-            room.gameState.allAnswersSubmitted = true;
-            io.to(currentRoomCode).emit('all:submitted');
         }
     });
     
@@ -719,12 +725,15 @@ io.on('connection', (socket) => {
         });
     }
     
-    // Invalidate answer (during review)
+    // Invalidate answer (during review) - HOST ONLY
     socket.on('answer:invalidate', ({ targetPlayerId, category }) => {
         if (!currentRoomCode || !currentPlayerId) return;
         
         const room = rooms.get(currentRoomCode);
         if (!room) return;
+        
+        // Only host can invalidate answers
+        if (room.hostId !== currentPlayerId) return;
         
         const targetPlayer = room.players.get(targetPlayerId);
         if (!targetPlayer) return;
@@ -752,6 +761,17 @@ io.on('connection', (socket) => {
                 totalScore: targetPlayer.totalScore
             });
         }
+    });
+    
+    // Sync review navigation (HOST ONLY) - broadcasts to all players
+    socket.on('review:navigate', ({ playerIndex }) => {
+        if (!currentRoomCode || !currentPlayerId) return;
+        
+        const room = rooms.get(currentRoomCode);
+        if (!room || room.hostId !== currentPlayerId) return;
+        
+        // Broadcast to all players in the room (including host for confirmation)
+        io.to(currentRoomCode).emit('review:sync', { playerIndex });
     });
     
     // Next round / End game

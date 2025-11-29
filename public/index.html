@@ -247,7 +247,7 @@
         h1, h2, h3, p, span, div, label, button {
             font-family: 'G Rustv', sans-serif !important;
         }
-        
+
         /* Use 3D Unicode for big titles */
         .title-3d {
             font-family: '3D Unicode', 'G Rustv', sans-serif !important;
@@ -957,7 +957,7 @@
             <div class="flex flex-col items-center gap-6 w-full max-w-md mx-auto">
                 <div class="relative group">
                     <div class="avatar-frame" style="width: 80px; height: 80px;">
-                        <img id="avatar-preview" src="https://api.dicebear.com/9.x/notionists-neutral/svg?seed=Guest" alt="Avatar" class="w-full h-full object-cover">
+                        <img id="avatar-preview" src="https://api.dicebear.com/9.x/notionists-neutral/svg?seed=Guest" alt="Avatar" class="w-full h-full  object-cover">
                     </div>
                 </div>
 
@@ -966,7 +966,7 @@
                         <input type="text" id="nickname" class="line-input text-center text-xl" placeholder="შენი სახელი..." maxlength="15" oninput="updateAvatarPreview()">
                         <i class="fa-solid fa-user absolute right-2 top-2 text-gray-400"></i>
                     </div>
-                </div>
+                    </div>
 
                 <div class="flex gap-4 mt-4">
                     <button onclick="createNewRoom()" class="btn-doodle text-lg bg-green-50 border-green-700 text-green-800">
@@ -976,7 +976,7 @@
                         <i class="fa-solid fa-search mr-2"></i> დათვალიერება
                     </button>
                 </div>
-                
+
                 <div class="w-full px-6 mt-4">
                     <div class="quick-join-box">
                         <p class="text-sm text-gray-600 mb-3"><i class="fa-solid fa-bolt text-yellow-500 mr-1"></i> სწრაფი შესვლა</p>
@@ -984,7 +984,7 @@
                             <input type="text" id="room-code" class="line-input text-center uppercase flex-1 text-lg" placeholder="კოდი" maxlength="5" style="font-size: 1.2rem;">
                             <button onclick="quickJoinRoom()" class="btn-doodle text-sm px-4">
                                 <i class="fa-solid fa-arrow-right"></i>
-                            </button>
+                    </button>
                         </div>
                     </div>
                 </div>
@@ -994,8 +994,8 @@
                 <i class="fa-solid fa-pen-fancy text-5xl text-yellow-600"></i>
             </div>
         </div>
-        
-        
+
+
         <!-- === VIEW 1.5: BROWSE LOBBIES === -->
         <div id="browse-view" class="screen">
             <div class="nav-container">
@@ -1003,44 +1003,44 @@
                     <i class="fa-solid fa-arrow-left text-blue-900"></i> <span>უკან</span>
                 </button>
             </div>
-            
+
             <div class="pt-16 pb-4">
                 <h2 class="text-3xl font-bold text-indigo-900 mb-2">
                     <i class="fa-solid fa-door-open mr-2 text-orange-500"></i>ოთახები
                 </h2>
                 <p class="text-gray-500">იპოვე თამაში ან შექმენი შენი</p>
-            </div>
+                </div>
             
             <div class="flex items-center justify-between mb-4">
                 <button onclick="refreshRooms()" class="btn-doodle text-sm px-4 py-2">
                     <i class="fa-solid fa-rotate" id="refresh-icon"></i> განახლება
                 </button>
                 <span class="text-sm text-gray-400" id="room-count-text">0 ოთახი</span>
-            </div>
+                </div>
             
             <!-- Bulletin Board -->
             <div class="bulletin-board" id="rooms-bulletin">
                 <div class="rooms-loading" id="rooms-loading">
                     <div class="spinner"></div>
-                </div>
-                
+            </div>
+
                 <div id="rooms-grid" class="flex flex-wrap gap-6 justify-center hidden">
                     <!-- Room notes will be populated here -->
-                </div>
+                    </div>
                 
                 <div id="no-rooms" class="no-rooms-message hidden">
                     <i class="fa-solid fa-ghost"></i>
                     <p class="text-xl font-bold">ოთახები არ მოიძებნა</p>
                     <p class="mt-2 opacity-70">შექმენი პირველი ოთახი!</p>
-                </div>
-            </div>
+                        </div>
+                    </div>
             
             <div class="mt-6 text-center">
                 <button onclick="createNewRoom()" class="btn-doodle text-xl bg-green-50 border-green-700 text-green-800">
                     <i class="fa-solid fa-plus mr-2"></i> ახალი ოთახის შექმნა
                 </button>
-            </div>
-        </div>
+                </div>
+                    </div>
 
 
         <!-- === VIEW 2: LOBBY === -->
@@ -1052,10 +1052,10 @@
             </div>
 
             <div class="flex justify-between items-end border-b-2 border-indigo-900 pb-2 mb-6 pt-12">
-                <div>
+                    <div>
                     <h2 class="text-4xl font-bold text-indigo-900">მოსაცდელი</h2>
                     <p class="text-lg text-gray-500">ელოდება მოთამაშეებს...</p>
-                </div>
+                    </div>
                 <div class="bg-yellow-200 px-4 py-2 transform rotate-2 shadow-md text-lg border border-yellow-400 cursor-pointer" onclick="copyRoomCode()" title="დააკოპირე კოდი">
                     <i class="fa-solid fa-hashtag mr-1"></i> <span id="room-code-display" class="font-bold text-xl">-----</span>
                     <i class="fa-solid fa-copy ml-2 text-sm"></i>
@@ -1072,37 +1072,37 @@
                     <h3 class="font-bold border-b-2 border-gray-400/30 mb-4 text-center text-xl">
                         <i class="fa-solid fa-sliders mr-2"></i>პარამეტრები
                     </h3>
-                    
-                    <div class="space-y-4">
-                        <div class="flex items-center justify-between">
+                
+                <div class="space-y-4">
+                    <div class="flex items-center justify-between">
                             <label class="text-lg"><i class="fa-regular fa-clock mr-1 text-gray-600"></i> დრო:</label>
-                            <div class="flex items-center gap-2 bg-white/50 px-2 rounded">
+                        <div class="flex items-center gap-2 bg-white/50 px-2 rounded">
                                 <input type="number" id="min-time-input" class="line-input text-center w-12 text-lg !border-none" value="15" min="5" max="60" onchange="updateSettings()">
                                 <span class="text-sm">წმ</span>
-                            </div>
-                        </div>
-                        
-                        <div class="flex items-center justify-between">
-                            <label class="text-lg"><i class="fa-solid fa-rotate-right mr-1 text-gray-600"></i> რაუნდები:</label>
-                            <div class="bg-white/50 px-2 rounded">
-                                <input type="number" id="max-rounds-input" class="line-input text-center w-12 text-lg !border-none" value="5" min="1" max="20" onchange="updateSettings()">
-                            </div>
-                        </div>
-
-                        <div class="flex items-center justify-between pt-2 border-t border-gray-400/30">
-                            <div class="flex items-center gap-2">
-                                <label class="text-lg cursor-pointer select-none flex items-center" for="bonus-cat-input">
-                                    <i class="fa-solid fa-star text-orange-500 mr-2"></i> ბონუსი:
-                                </label>
-                                <button onclick="toggleBonusInfo()" class="text-indigo-500 hover:text-indigo-700 transition transform hover:scale-110" title="რა არის ეს?">
-                                    <i class="fa-solid fa-circle-info text-xl"></i>
-                                </button>
-                            </div>
-                            <input type="checkbox" id="bonus-cat-input" class="w-6 h-6 accent-indigo-600 cursor-pointer rounded" onchange="updateSettings()">
                         </div>
                     </div>
+                    
+                    <div class="flex items-center justify-between">
+                        <label class="text-lg"><i class="fa-solid fa-rotate-right mr-1 text-gray-600"></i> რაუნდები:</label>
+                        <div class="bg-white/50 px-2 rounded">
+                                <input type="number" id="max-rounds-input" class="line-input text-center w-12 text-lg !border-none" value="5" min="1" max="20" onchange="updateSettings()">
+                        </div>
+                    </div>
+
+                    <div class="flex items-center justify-between pt-2 border-t border-gray-400/30">
+                        <div class="flex items-center gap-2">
+                            <label class="text-lg cursor-pointer select-none flex items-center" for="bonus-cat-input">
+                                <i class="fa-solid fa-star text-orange-500 mr-2"></i> ბონუსი:
+                            </label>
+                            <button onclick="toggleBonusInfo()" class="text-indigo-500 hover:text-indigo-700 transition transform hover:scale-110" title="რა არის ეს?">
+                                <i class="fa-solid fa-circle-info text-xl"></i>
+                            </button>
+                        </div>
+                            <input type="checkbox" id="bonus-cat-input" class="w-6 h-6 accent-indigo-600 cursor-pointer rounded" onchange="updateSettings()">
+                    </div>
                 </div>
-                
+            </div>
+
                 <!-- Categories Editor -->
                 <div class="category-editor" id="category-editor" style="flex: 1; min-width: 280px;">
                     <h3 class="font-bold border-b-2 border-gray-400/30 mb-3 text-center text-xl">
@@ -1177,9 +1177,9 @@
             <div class="mt-8 flex flex-col items-center gap-4">
                 <button id="draw-btn" class="btn-doodle w-40 h-40 rounded-full flex flex-col items-center justify-center text-xl bg-indigo-50 border-4 hover:bg-indigo-100 transition duration-300 hidden" 
                     onclick="drawLetter()"
-                >
+            >
                     აირჩიე ასო
-                </button>
+            </button>
                 
                 <p id="waiting-for-host" class="text-lg text-gray-500">
                     <i class="fa-solid fa-hourglass-half animate-pulse mr-2"></i>
@@ -1224,7 +1224,7 @@
             </div>
 
             <!-- Sidebar Avatars -->
-            <div class="fixed left-4 top-1/2 transform -translate-y-1/2 flex flex-col gap-4 z-20 hidden sm:flex" id="game-players-sidebar">
+            <div class="fixed left-4 top-1/2 rounded-lg transform -translate-y-1/2 flex flex-col gap-4 z-20 hidden sm:flex" id="game-players-sidebar">
                 <!-- Populated by JS -->
             </div>
         </div>
@@ -1244,7 +1244,7 @@
 
             <!-- Player Navigation for Review -->
             <div class="flex items-center justify-center gap-6 mb-6">
-                <button onclick="prevPlayer()" class="text-3xl text-indigo-800 hover:scale-110 transition"><i class="fa-solid fa-chevron-left"></i></button>
+                <button id="review-prev-btn" onclick="prevPlayer()" class="text-3xl text-indigo-800 hover:scale-110 transition"><i class="fa-solid fa-chevron-left"></i></button>
                 
                 <div class="polaroid transform rotate-2 transition duration-300 hover:scale-105">
                     <div class="relative">
@@ -1253,10 +1253,17 @@
                     </div>
                     <div class="mt-2 text-2xl font-bold" id="review-nick">Player</div>
                     <div class="text-4xl font-bold text-red-600 mt-1 font-mono" id="review-score">+0</div>
+                    <div class="text-sm text-gray-500 mt-1" id="review-player-index">1/1</div>
                 </div>
 
-                <button onclick="nextPlayer()" class="text-3xl text-indigo-800 hover:scale-110 transition"><i class="fa-solid fa-chevron-right"></i></button>
+                <button id="review-next-btn" onclick="nextPlayer()" class="text-3xl text-indigo-800 hover:scale-110 transition"><i class="fa-solid fa-chevron-right"></i></button>
             </div>
+            
+            <!-- Host indicator for non-hosts -->
+            <p id="host-controls-notice" class="text-center text-gray-500 text-sm mb-4 hidden">
+                <i class="fa-solid fa-crown text-yellow-500 mr-1"></i>
+                ჰოსტი აკონტროლებს შემოწმებას
+            </p>
 
             <!-- Score Table -->
             <div class="w-full select-none bg-white/40 p-4 rounded-lg shadow-inner mb-8" id="results-table">
@@ -1269,7 +1276,7 @@
                 </button>
             </div>
         </div>
-        
+
         <!-- === VIEW 6: GAME ENDED === -->
         <div id="ended-view" class="screen justify-center items-center">
             <h2 class="title-3d text-5xl font-bold text-center text-indigo-900 mb-8">
@@ -1278,8 +1285,8 @@
             
             <div class="podium mb-8" id="podium-container">
                 <!-- Populated by JS -->
-            </div>
-            
+    </div>
+
             <div class="w-full max-w-md bg-white/60 rounded-lg p-4 shadow-inner" id="final-standings">
                 <!-- Full standings -->
             </div>
@@ -1544,6 +1551,14 @@
                             renderPlayerReview();
                         }
                     }
+                }
+            });
+            
+            // Host controls review navigation - sync to all players
+            socket.on('review:sync', (data) => {
+                if (resultsData && data.playerIndex >= 0 && data.playerIndex < resultsData.results.length) {
+                    reviewIndex = data.playerIndex;
+                    renderPlayerReview();
                 }
             });
             
@@ -1938,7 +1953,7 @@
                 note.innerHTML = `
                     <div class="flex items-center gap-2 mb-2">
                         <div class="w-10 h-10 rounded-full border-2 border-gray-600 overflow-hidden bg-white">
-                            <img src="https://api.dicebear.com/9.x/notionists-neutral/svg?seed=${encodeURIComponent(room.hostAvatar)}" class="w-full h-full">
+                            <img src="https://api.dicebear.com/9.x/notionists-neutral/svg?seed=${encodeURIComponent(room.hostAvatar)}" class="w-full h-full rounded-full">
                         </div>
                         <div class="flex-1">
                             <div class="font-bold text-sm truncate">${room.hostName}</div>
@@ -2029,9 +2044,9 @@
             
             if (!nick) {
                 showToast('⚠️ გთხოვთ შეიყვანოთ სახელი');
-                return;
-            }
-            
+                    return;
+                }
+
             if (roomCode) {
                 socket.emit('room:join', {
                     roomCode,
@@ -2083,7 +2098,7 @@
                 
                 card.innerHTML = `
                     <div class="w-14 h-14 rounded-full border-2 ${isMe ? 'border-indigo-600' : 'border-gray-400'} overflow-hidden bg-white shadow-sm">
-                        <img src="https://api.dicebear.com/9.x/notionists-neutral/svg?seed=${encodeURIComponent(player.avatarSeed)}" class="w-full h-full">
+                        <img src="https://api.dicebear.com/9.x/notionists-neutral/svg?seed=${encodeURIComponent(player.avatarSeed)}" class="w-full h-full rounded-full">
                     </div>
                     <div class="flex-1">
                         <div class="flex items-center gap-2">
@@ -2119,7 +2134,7 @@
                 startBtn.disabled = !allReady || roomData.players.length < 1;
                 
                 waitingText.classList.toggle('hidden', allReady);
-            } else {
+                   } else {
                 readyBtn.classList.remove('hidden');
                 startContainer.classList.add('hidden');
                 waitingText.classList.add('hidden');
@@ -2265,46 +2280,46 @@
             document.getElementById('game-letter-display').textContent = data.letter;
             
             // Build inputs
-            const container = document.getElementById('game-inputs-container');
-            container.innerHTML = '';
-            
-            Object.entries(data.categories).forEach(([key, label]) => {
-                const div = document.createElement('div');
-                div.className = 'game-row flex items-baseline gap-2 mb-2';
-                const labelClass = key === 'bonus' ? 'text-orange-600 font-bold' : 'text-gray-700';
-                const icon = key === 'bonus' ? '<i class="fa-solid fa-star text-xs mr-1"></i>' : '';
+                const container = document.getElementById('game-inputs-container');
+                container.innerHTML = '';
                 
-                div.innerHTML = `
-                    <label class="${labelClass} text-xl w-32 text-right">${icon}${label}:</label>
+            Object.entries(data.categories).forEach(([key, label]) => {
+                    const div = document.createElement('div');
+                    div.className = 'game-row flex items-baseline gap-2 mb-2';
+                    const labelClass = key === 'bonus' ? 'text-orange-600 font-bold' : 'text-gray-700';
+                    const icon = key === 'bonus' ? '<i class="fa-solid fa-star text-xs mr-1"></i>' : '';
+                    
+                    div.innerHTML = `
+                        <label class="${labelClass} text-xl w-32 text-right">${icon}${label}:</label>
                     <input type="text" class="line-input" data-cat="${key}" autocomplete="off" 
                            oninput="onAnswerInput('${key}', this.value)">
-                `;
-                container.appendChild(div);
-            });
+                    `;
+                    container.appendChild(div);
+                });
             
             // Timer
-            const stopBtn = document.getElementById('btn-game-stop');
-            const timerDisplay = document.getElementById('stop-timer-display');
-            
-            stopBtn.disabled = true;
-            timerDisplay.style.opacity = '1';
-            
+                const stopBtn = document.getElementById('btn-game-stop');
+                const timerDisplay = document.getElementById('stop-timer-display');
+                
+                stopBtn.disabled = true;
+                timerDisplay.style.opacity = '1';
+
             let timeLeft = data.minTime;
             timerDisplay.textContent = timeLeft;
-            
+                
             if (stopTimer) clearInterval(stopTimer);
             
             stopTimer = setInterval(() => {
-                timeLeft--;
+                    timeLeft--;
                 timerDisplay.textContent = timeLeft;
                 
                 if (timeLeft <= 0) {
                     clearInterval(stopTimer);
-                }
-            }, 1000);
-            
+                    }
+                }, 1000);
+
             updateGameSidebar();
-            router.go('game');
+                router.go('game');
         }
         
         function onAnswerInput(category, value) {
@@ -2332,8 +2347,8 @@
             
             // Disable all inputs
             document.querySelectorAll('#game-inputs-container input').forEach(inp => {
-                inp.disabled = true;
-                inp.parentElement.classList.add('opacity-50');
+                    inp.disabled = true;
+                    inp.parentElement.classList.add('opacity-50');
             });
             document.getElementById('btn-game-stop').disabled = true;
             
@@ -2346,7 +2361,7 @@
                     numberEl.textContent = count;
                     numberEl.style.animation = 'none';
                     setTimeout(() => numberEl.style.animation = 'countPop 1s ease-out', 10);
-                } else {
+                             } else {
                     clearInterval(countInterval);
                     overlay.classList.add('hidden');
                 }
@@ -2369,7 +2384,7 @@
                 div.className = 'relative';
                 div.innerHTML = `
                     <div class="w-12 h-12 rounded-full border-2 ${player.isConnected ? 'border-gray-400' : 'border-red-400'} bg-white shadow-md relative group" data-player-id="${player.id}">
-                        <img src="https://api.dicebear.com/9.x/notionists-neutral/svg?seed=${encodeURIComponent(player.avatarSeed)}" class="w-full h-full">
+                        <img src="https://api.dicebear.com/9.x/notionists-neutral/svg?seed=${encodeURIComponent(player.avatarSeed)}" class="w-full h-full rounded-full">
                         <div class="absolute left-14 top-2 bg-black text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition shadow-lg whitespace-nowrap">${player.nick}</div>
                     </div>
                     <div class="typing-indicator absolute -bottom-1 -right-1 hidden" data-typing-indicator="${player.id}">
@@ -2403,6 +2418,11 @@
             document.getElementById('back-to-lobby-btn').classList.toggle('hidden', !isHost);
             document.getElementById('next-round-btn').classList.toggle('hidden', !isHost);
             
+            // Show/hide navigation controls based on host status
+            document.getElementById('review-prev-btn').classList.toggle('invisible', !isHost);
+            document.getElementById('review-next-btn').classList.toggle('invisible', !isHost);
+            document.getElementById('host-controls-notice').classList.toggle('hidden', isHost);
+            
             if (data.isLastRound) {
                 document.getElementById('next-round-btn').innerHTML = 'თამაშის დასრულება <i class="fa-solid fa-flag-checkered ml-2"></i>';
             } else {
@@ -2410,19 +2430,29 @@
             }
             
             renderPlayerReview();
+            
+            // Host syncs the initial position to all players
+            if (isHost) {
+                socket.emit('review:navigate', { playerIndex: reviewIndex });
+            }
+            
             router.go('results');
         }
         
         function prevPlayer() {
+            if (!isHost) return; // Only host can navigate
             if (reviewIndex > 0) {
                 reviewIndex--;
+                socket.emit('review:navigate', { playerIndex: reviewIndex });
                 renderPlayerReview();
             }
         }
         
         function nextPlayer() {
+            if (!isHost) return; // Only host can navigate
             if (reviewIndex < resultsData.results.length - 1) {
                 reviewIndex++;
+                socket.emit('review:navigate', { playerIndex: reviewIndex });
                 renderPlayerReview();
             }
         }
@@ -2436,6 +2466,9 @@
             document.getElementById('review-nick').textContent = player.nick;
             document.getElementById('review-score').textContent = '+' + player.roundScore;
             document.getElementById('review-crown').classList.toggle('hidden', !player.isHost);
+            
+            // Show player index
+            document.getElementById('review-player-index').textContent = `${reviewIndex + 1}/${resultsData.results.length}`;
             
             // Table
             const container = document.getElementById('results-table');
@@ -2452,10 +2485,15 @@
                 const word = score ? score.answer : '';
                 const points = score ? (score.invalidatedBy ? 0 : score.points) : 0;
                 const isValid = score ? score.isValid && !score.invalidatedBy : false;
-                
+
                 const row = document.createElement('div');
-                row.className = 'result-row flex justify-between items-center py-3 border-b border-gray-300 cursor-pointer hover:bg-yellow-50 transition';
-                row.onclick = () => toggleAnswer(player.id, catKey);
+                // Only host can click to toggle - styled differently
+                if (isHost) {
+                    row.className = 'result-row flex justify-between items-center py-3 border-b border-gray-300 cursor-pointer hover:bg-yellow-50 transition';
+                    row.onclick = () => toggleAnswer(player.id, catKey);
+                } else {
+                    row.className = 'result-row flex justify-between items-center py-3 border-b border-gray-300';
+                }
                 
                 row.innerHTML = `
                     <span class="text-lg w-1/4 truncate pr-2 text-gray-700" title="${catName}">${catName}</span>
@@ -2468,6 +2506,7 @@
         }
         
         function toggleAnswer(playerId, category) {
+            if (!isHost) return; // Only host can toggle answers
             socket.emit('answer:invalidate', { targetPlayerId: playerId, category });
         }
         
@@ -2498,7 +2537,7 @@
                 div.className = `podium-place ${places[placeIndex]}`;
                 div.innerHTML = `
                     <div class="w-16 h-16 rounded-full bg-white border-2 border-white overflow-hidden mb-2">
-                        <img src="https://api.dicebear.com/9.x/notionists-neutral/svg?seed=${encodeURIComponent(player.avatarSeed)}" class="w-full h-full">
+                        <img src="https://api.dicebear.com/9.x/notionists-neutral/svg?seed=${encodeURIComponent(player.avatarSeed)}" class="w-full h-full rounded-full">
                     </div>
                     <div class="text-lg font-bold">${player.nick}</div>
                     <div class="text-2xl font-bold">${player.totalScore}</div>
@@ -2516,7 +2555,7 @@
                 row.innerHTML = `
                     <span class="text-2xl font-bold w-8 text-center">${idx + 1}</span>
                     <div class="w-10 h-10 rounded-full bg-white border-2 border-gray-300 overflow-hidden">
-                        <img src="https://api.dicebear.com/9.x/notionists-neutral/svg?seed=${encodeURIComponent(player.avatarSeed)}" class="w-full h-full">
+                        <img src="https://api.dicebear.com/9.x/notionists-neutral/svg?seed=${encodeURIComponent(player.avatarSeed)}" class="w-full h-full rounded-full">
                     </div>
                     <span class="flex-1 font-bold text-lg">${player.nick}</span>
                     <span class="text-xl font-bold text-indigo-600">${player.totalScore} ქულა</span>
