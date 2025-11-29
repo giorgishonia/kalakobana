@@ -1,0 +1,2553 @@
+<!DOCTYPE html>
+<html lang="ka">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ქალაქობანა - Multiplayer</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Socket.io Client -->
+    <script src="/socket.io/socket.io.js"></script>
+
+    <style>
+        /* Define Custom Fonts */
+        @font-face {
+            font-family: 'G Rustv';
+            src: url('bpg_nino_mtavruli_normal.ttf') format('truetype');
+            font-weight: normal;
+            font-style: normal;
+        }
+        
+        @font-face {
+            font-family: '3D Unicode';
+            src: url('3d_unicode.ttf') format('truetype');
+            font-weight: normal;
+            font-style: normal;
+        }
+
+        :root {
+            --paper-bg: #fdfbf7;
+            --line-color: #a4c3e8;
+            --margin-color: #ea4c4c;
+            --ink-color: #2c3e50;
+            --pencil-gray: #4a4a4a;
+            --highlight: #fef08a;
+            --error: #ef4444;
+            --eraser-blue: #4169E1;
+            --eraser-white: #f8f9fa;
+            --line-height: 32px;
+        }
+
+        body {
+            background-color: #2d3436;
+            font-family: 'G Rustv', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            overflow: hidden;
+            perspective: 2000px;
+        }
+
+        #app-container {
+            width: 100%;
+            max-width: 800px;
+            height: 95vh;
+            background-color: var(--paper-bg);
+            position: relative;
+            box-shadow: 
+                -5px 0 15px rgba(0,0,0,0.2),
+                10px 15px 40px rgba(0,0,0,0.5);
+            overflow: hidden;
+            background-image: 
+                linear-gradient(90deg, transparent 79px, var(--margin-color) 79px, var(--margin-color) 81px, transparent 81px),
+                linear-gradient(var(--line-color) 1px, transparent 1px);
+            background-size: 100% var(--line-height);
+            color: var(--ink-color);
+            border-radius: 4px 10px 10px 4px;
+            transform-style: preserve-3d;
+        }
+
+        @media (max-width: 600px) {
+            #app-container {
+                background-image: 
+                    linear-gradient(90deg, transparent 39px, var(--margin-color) 39px, var(--margin-color) 41px, transparent 41px),
+                    linear-gradient(var(--line-color) 1px, transparent 1px);
+                height: 100vh;
+                border-radius: 0;
+            }
+        }
+
+        .screen {
+            display: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            padding: 20px;
+            padding-left: 100px;
+            overflow-y: auto;
+            background-color: var(--paper-bg);
+            background-image: 
+                linear-gradient(90deg, transparent 79px, var(--margin-color) 79px, var(--margin-color) 81px, transparent 81px),
+                linear-gradient(var(--line-color) 1px, transparent 1px);
+            background-size: 100% var(--line-height);
+            backface-visibility: hidden;
+            transform-origin: left center;
+        }
+
+        @media (max-width: 600px) {
+            .screen {
+                padding-left: 50px;
+                padding-right: 15px;
+                background-image: 
+                    linear-gradient(90deg, transparent 39px, var(--margin-color) 39px, var(--margin-color) 41px, transparent 41px),
+                    linear-gradient(var(--line-color) 1px, transparent 1px);
+            }
+        }
+
+        .screen.active {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            z-index: 2;
+        }
+
+        .page-enter {
+            display: flex !important;
+            flex-direction: column;
+            gap: 20px;
+            z-index: 10;
+            animation: flipIn 0.9s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+        }
+
+        .page-exit {
+            display: flex !important;
+            flex-direction: column;
+            gap: 20px;
+            z-index: 1;
+            animation: fadeDark 0.9s forwards;
+        }
+
+        @keyframes flipIn {
+            0% { transform: rotateY(-180deg); box-shadow: 20px 0 50px rgba(0,0,0,0.5); }
+            100% { transform: rotateY(0deg); box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+        }
+        
+        @keyframes fadeDark {
+            0% { filter: brightness(1); }
+            100% { filter: brightness(0.9); }
+        }
+
+        .btn-eraser-real {
+            position: relative;
+            background: linear-gradient(115deg, var(--eraser-white) 45%, var(--eraser-blue) 45%);
+            border: none;
+            padding: 8px 30px;
+            font-family: 'G Rustv', sans-serif;
+            font-weight: bold;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transform: skewX(-20deg) rotate(-2deg);
+            box-shadow: 4px 4px 0px #bdc3c7, 6px 6px 12px rgba(0,0,0,0.2);
+            border-radius: 2px;
+            transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            overflow: hidden;
+            color: #2c3e50;
+            text-align: left;
+            justify-content: flex-start;
+            padding-left: 15px;
+        }
+        
+        .btn-eraser-real span, .btn-eraser-real i {
+            transform: skewX(20deg); 
+            display: inline-block;
+            position: relative;
+            z-index: 10;
+        }
+
+        .btn-eraser-real:hover {
+            transform: skewX(-20deg) rotate(0deg) scale(1.05) translateY(-2px);
+            box-shadow: 5px 5px 0px #aab7b8, 10px 10px 20px rgba(0,0,0,0.25);
+        }
+        
+        .btn-eraser-real::after {
+            content: '';
+            position: absolute;
+            top: 0; right: 0; width: 55%; height: 100%;
+            background: linear-gradient(to bottom, transparent, rgba(0,0,0,0.05));
+            pointer-events: none;
+        }
+
+        .btn-doodle {
+            border: 3px solid var(--ink-color);
+            background: rgba(255, 255, 255, 0.5);
+            border-radius: 255px 15px 225px 15px / 15px 225px 15px 255px;
+            padding: 10px 30px;
+            font-size: 1.4rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+            display: inline-block;
+            font-family: 'G Rustv', sans-serif;
+            box-shadow: 2px 2px 0px rgba(0,0,0,0.1);
+        }
+
+        .btn-doodle:hover:not(:disabled) {
+            transform: scale(1.05) rotate(-1deg);
+            background-color: var(--highlight);
+        }
+
+        .btn-doodle:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            border-color: #999;
+            color: #999;
+        }
+
+        .btn-stop {
+            border-color: var(--error);
+            color: var(--error);
+            font-size: 1.6rem;
+            border-width: 4px;
+        }
+        
+        .line-input {
+            background: transparent;
+            border: none;
+            border-bottom: 2px dashed rgba(44, 62, 80, 0.4);
+            width: 100%;
+            font-family: 'G Rustv', sans-serif; 
+            font-size: 1.8rem;
+            color: var(--ink-color);
+            padding: 2px 5px;
+            outline: none;
+            transition: border 0.3s;
+            letter-spacing: 1px;
+            font-weight: bold;
+        }
+        
+        .line-input:focus {
+            border-bottom: 3px solid var(--ink-color);
+            background-color: rgba(254, 240, 138, 0.2);
+        }
+
+        h1, h2, h3, p, span, div, label, button {
+            font-family: 'G Rustv', sans-serif !important;
+        }
+        
+        /* Use 3D Unicode for big titles */
+        .title-3d {
+            font-family: '3D Unicode', 'G Rustv', sans-serif !important;
+        }
+
+        .avatar-frame {
+            width: 100px;
+            height: 100px;
+            border: 4px solid var(--ink-color);
+            border-radius: 50%;
+            overflow: hidden;
+            background: white;
+            box-shadow: 4px 4px 0 rgba(0,0,0,0.1);
+            transition: transform 0.2s;
+            animation: idleWiggle 4s ease-in-out infinite;
+        }
+        
+        @keyframes idleWiggle {
+            0%, 100% { transform: rotate(0deg); }
+            25% { transform: rotate(2deg); }
+            75% { transform: rotate(-2deg); }
+        }
+
+        .sticky-note {
+            background-color: #fff740;
+            padding: 20px;
+            box-shadow: 3px 5px 8px rgba(0,0,0,0.2);
+            transform: rotate(2deg);
+            max-width: 300px;
+            margin: 0 auto;
+            position: relative;
+            font-size: 1.1rem;
+        }
+        
+        .sticky-note::before {
+            content: '';
+            position: absolute;
+            top: -10px; left: 40%; width: 60px; height: 20px;
+            background: rgba(255,255,255,0.4);
+            transform: rotate(-2deg);
+        }
+
+        .polaroid {
+            background: white;
+            padding: 15px 15px 40px 15px;
+            box-shadow: 0 5px 10px rgba(0,0,0,0.15);
+            transform: rotate(-3deg);
+            text-align: center;
+            width: fit-content;
+            margin: 0 auto;
+            transition: transform 0.3s;
+        }
+        
+        .polaroid:hover {
+            transform: rotate(0deg) scale(1.05);
+            z-index: 10;
+        }
+
+        .polaroid img {
+            width: 150px; height: 150px; object-fit: cover;
+            border: 1px solid #ddd; background: #f9f9f9;
+        }
+
+        .nav-container {
+            position: absolute; top: 25px; left: 15px; z-index: 50;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(12deg); }
+            50% { transform: translateY(-10px) rotate(15deg); }
+        }
+
+        .decor-pencil {
+            animation: float 4s ease-in-out infinite;
+        }
+        
+        @keyframes handIdle {
+            0%, 100% { transform: rotate(12deg) translateY(0); }
+            50% { transform: rotate(8deg) translateY(5px); }
+        }
+        
+        @keyframes handDraw {
+            0% { transform: translate(0, 0) rotate(10deg); }
+            25% { transform: translate(20px, -20px) rotate(5deg); }
+            50% { transform: translate(-10px, 30px) rotate(15deg); }
+            75% { transform: translate(30px, 10px) rotate(0deg); }
+            100% { transform: translate(0, 0) rotate(10deg); }
+        }
+
+        .hand-idle-anim {
+            animation: handIdle 3s ease-in-out infinite;
+        }
+        
+        .hand-drawing-anim {
+            animation: handDraw 0.1s linear infinite;
+        }
+
+        .circled-letter {
+            width: 80px; height: 80px;
+            border: 4px solid var(--margin-color);
+            border-radius: 50%;
+            display: flex; justify-content: center; align-items: center;
+            font-size: 3.5rem; color: var(--margin-color);
+            font-weight: bold; transform: rotate(-5deg);
+            margin: 0 auto; background: rgba(255,255,255,0.9);
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.1);
+            font-family: 'G Rustv', sans-serif !important;
+        }
+
+        .word-invalid {
+            text-decoration: line-through;
+            text-decoration-color: var(--error);
+            text-decoration-thickness: 3px;
+            opacity: 0.6;
+        }
+
+        #info-modal { transition: opacity 0.2s; }
+        .modal-paper {
+            background: white; padding: 20px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+            transform: rotate(-1deg);
+            background-image: linear-gradient(var(--line-color) 1px, transparent 1px);
+            background-size: 100% var(--line-height);
+            border: 1px solid #ddd; max-width: 90%; width: 350px;
+        }
+        
+        /* Connection Status */
+        .connection-status {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: bold;
+            z-index: 100;
+            transition: all 0.3s;
+        }
+        
+        .connection-status.connected {
+            background: #10b981;
+            color: white;
+        }
+        
+        .connection-status.disconnected {
+            background: #ef4444;
+            color: white;
+            animation: pulse 1s infinite;
+        }
+        
+        .connection-status.reconnecting {
+            background: #f59e0b;
+            color: white;
+            animation: pulse 1s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        /* Player card styles */
+        .player-card {
+            transition: all 0.3s;
+        }
+        
+        .player-card.disconnected {
+            opacity: 0.4;
+            filter: grayscale(100%);
+        }
+        
+        .player-card.ready .ready-badge {
+            display: flex;
+        }
+        
+        .player-card .ready-badge {
+            display: none;
+        }
+        
+        /* Toast notifications */
+        .toast-container {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .toast {
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 1rem;
+            animation: slideUp 0.3s ease-out;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+        
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* Countdown overlay */
+        .countdown-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(0,0,0,0.7);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            color: white;
+        }
+        
+        .countdown-number {
+            font-size: 8rem;
+            font-weight: bold;
+            animation: countPop 1s ease-out;
+            font-family: '3D Unicode', 'G Rustv', sans-serif !important;
+        }
+        
+        @keyframes countPop {
+            0% { transform: scale(2); opacity: 0; }
+            50% { transform: scale(1); opacity: 1; }
+            100% { transform: scale(0.8); opacity: 0.8; }
+        }
+        
+        /* Typing indicator */
+        .typing-indicator {
+            display: inline-flex;
+            gap: 3px;
+            padding: 3px 8px;
+            background: #e5e7eb;
+            border-radius: 10px;
+        }
+        
+        .typing-indicator span {
+            width: 6px;
+            height: 6px;
+            background: #6b7280;
+            border-radius: 50%;
+            animation: typing 1.4s infinite;
+        }
+        
+        .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
+        .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
+        
+        @keyframes typing {
+            0%, 60%, 100% { transform: translateY(0); }
+            30% { transform: translateY(-4px); }
+        }
+        
+        /* Final standings podium */
+        .podium {
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            gap: 10px;
+            height: 250px;
+        }
+        
+        .podium-place {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background: linear-gradient(to top, #1e3a5f, #2563eb);
+            border-radius: 8px 8px 0 0;
+            padding: 10px;
+            color: white;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+        
+        .podium-place.first {
+            height: 180px;
+            background: linear-gradient(to top, #ca8a04, #fbbf24);
+            order: 2;
+        }
+        
+        .podium-place.second {
+            height: 140px;
+            background: linear-gradient(to top, #6b7280, #9ca3af);
+            order: 1;
+        }
+        
+        .podium-place.third {
+            height: 100px;
+            background: linear-gradient(to top, #92400e, #d97706);
+            order: 3;
+        }
+        
+        /* ============== LOBBY BROWSER STYLES ============== */
+        .bulletin-board {
+            background: linear-gradient(135deg, #8B4513 0%, #654321 50%, #8B4513 100%);
+            border: 12px solid #5D3A1A;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 
+                inset 0 0 30px rgba(0,0,0,0.4),
+                0 10px 30px rgba(0,0,0,0.5);
+            position: relative;
+            min-height: 300px;
+        }
+        
+        .bulletin-board::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url("data:image/svg+xml,%3Csvg viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.15'/%3E%3C/svg%3E");
+            pointer-events: none;
+            border-radius: 4px;
+        }
+        
+        .room-note {
+            background: #fffacd;
+            padding: 15px;
+            width: 180px;
+            min-height: 140px;
+            box-shadow: 
+                2px 3px 8px rgba(0,0,0,0.3),
+                0 0 0 1px rgba(0,0,0,0.05);
+            position: relative;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .room-note::before {
+            content: '';
+            position: absolute;
+            top: -8px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 20px;
+            height: 20px;
+            background: radial-gradient(circle, #dc2626 0%, #991b1b 100%);
+            border-radius: 50%;
+            box-shadow: 
+                0 2px 4px rgba(0,0,0,0.3),
+                inset 0 -2px 4px rgba(0,0,0,0.2),
+                inset 0 2px 4px rgba(255,255,255,0.3);
+        }
+        
+        .room-note:hover {
+            transform: scale(1.08) rotate(0deg) !important;
+            box-shadow: 
+                4px 6px 15px rgba(0,0,0,0.4),
+                0 0 0 2px #fbbf24;
+            z-index: 10;
+        }
+        
+        .room-note.pink { background: #ffb6c1; }
+        .room-note.blue { background: #b0e0e6; }
+        .room-note.green { background: #98fb98; }
+        .room-note.orange { background: #ffd699; }
+        .room-note.purple { background: #dda0dd; }
+        
+        .room-code-tag {
+            position: absolute;
+            bottom: -5px;
+            right: -5px;
+            background: #1e293b;
+            color: #fbbf24;
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            font-size: 0.8rem;
+            padding: 3px 8px;
+            border-radius: 4px;
+            transform: rotate(3deg);
+            box-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .player-dots {
+            display: flex;
+            gap: 4px;
+            margin-top: auto;
+        }
+        
+        .player-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #10b981;
+            border: 2px solid rgba(0,0,0,0.2);
+        }
+        
+        .player-dot.empty {
+            background: #d1d5db;
+            opacity: 0.5;
+        }
+        
+        .browse-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .browse-tab {
+            padding: 8px 20px;
+            background: rgba(255,255,255,0.1);
+            border: 2px solid transparent;
+            border-radius: 20px 20px 0 0;
+            color: #6b7280;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.2s;
+        }
+        
+        .browse-tab.active {
+            background: var(--paper-bg);
+            border-color: var(--ink-color);
+            border-bottom-color: var(--paper-bg);
+            color: var(--ink-color);
+            transform: translateY(2px);
+        }
+        
+        .no-rooms-message {
+            text-align: center;
+            padding: 40px;
+            color: rgba(255,255,255,0.7);
+        }
+        
+        .no-rooms-message i {
+            font-size: 4rem;
+            margin-bottom: 15px;
+            opacity: 0.5;
+        }
+        
+        /* Loading spinner for rooms */
+        .rooms-loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 60px;
+        }
+        
+        .rooms-loading .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid rgba(255,255,255,0.2);
+            border-top-color: #fbbf24;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        /* Video container for sticks animation */
+        .video-container {
+            position: relative;
+            width: 100%;
+            max-width: 450px;
+            aspect-ratio: 4/3;
+            background: var(--paper-bg);
+            border-radius: 8px;
+            overflow: hidden;
+            border: 3px solid var(--ink-color);
+            box-shadow: 
+                4px 4px 0 rgba(0,0,0,0.1),
+                0 10px 30px rgba(0,0,0,0.3);
+        }
+        
+        .video-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            background: var(--paper-bg);
+            object-fit: cover;
+        }
+        
+        .video-container .placeholder {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: var(--paper-bg);
+            color: var(--ink-color);
+        }
+        
+        .video-container .placeholder i {
+            font-size: 4rem;
+            margin-bottom: 15px;
+            color: var(--margin-color);
+            animation: float 3s ease-in-out infinite;
+        }
+        
+        .letter-reveal {
+            position: absolute;
+            inset: 0;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            background: rgba(253, 251, 247, 0.95);
+            z-index: 10;
+        }
+        
+        .letter-reveal.show {
+            display: flex;
+            animation: letterReveal 0.5s ease-out;
+        }
+        
+        .letter-reveal .big-letter {
+            font-family: '3D Unicode', 'G Rustv', sans-serif;
+            font-size: 10rem;
+            color: var(--margin-color);
+            text-shadow: 
+                4px 4px 0 rgba(0,0,0,0.1),
+                8px 8px 0 rgba(0,0,0,0.05);
+            animation: letterPop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        
+        @keyframes letterReveal {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        @keyframes letterPop {
+            0% { transform: scale(0) rotate(-20deg); }
+            60% { transform: scale(1.2) rotate(5deg); }
+            100% { transform: scale(1) rotate(-3deg); }
+        }
+        
+        /* Quick join input styling */
+        .quick-join-box {
+            background: rgba(255,255,255,0.9);
+            border: 3px dashed var(--ink-color);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            transform: rotate(-1deg);
+        }
+        
+        /* Category Editor Styles */
+        .category-editor {
+            background: #e8f4f8;
+            border: 2px solid #a4c3e8;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 15px;
+            transform: rotate(-1deg);
+            box-shadow: 2px 3px 6px rgba(0,0,0,0.1);
+        }
+        
+        .category-list {
+            max-height: 200px;
+            overflow-y: auto;
+            margin-bottom: 10px;
+        }
+        
+        .category-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 10px;
+            background: white;
+            border-radius: 6px;
+            margin-bottom: 6px;
+            border: 1px solid #ddd;
+            transition: all 0.2s;
+        }
+        
+        .category-item:hover {
+            border-color: var(--ink-color);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .category-item input {
+            flex: 1;
+            border: none;
+            background: transparent;
+            font-family: 'G Rustv', sans-serif;
+            font-size: 1rem;
+            outline: none;
+            padding: 2px 5px;
+        }
+        
+        .category-item input:focus {
+            background: rgba(254, 240, 138, 0.3);
+            border-radius: 4px;
+        }
+        
+        .category-item input:disabled {
+            color: var(--ink-color);
+            cursor: default;
+        }
+        
+        .category-item .drag-handle {
+            cursor: grab;
+            color: #999;
+            padding: 0 5px;
+        }
+        
+        .category-item .delete-btn {
+            color: #ef4444;
+            cursor: pointer;
+            padding: 2px 6px;
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+        
+        .category-item .delete-btn:hover {
+            background: #fee2e2;
+        }
+        
+        .add-category-row {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .add-category-row input {
+            flex: 1;
+            padding: 8px 12px;
+            border: 2px dashed #a4c3e8;
+            border-radius: 6px;
+            font-family: 'G Rustv', sans-serif;
+            font-size: 1rem;
+            outline: none;
+            background: white;
+        }
+        
+        .add-category-row input:focus {
+            border-style: solid;
+            border-color: var(--ink-color);
+        }
+        
+        .add-category-row button {
+            padding: 8px 15px;
+            background: #10b981;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.2s;
+        }
+        
+        .add-category-row button:hover {
+            background: #059669;
+            transform: scale(1.05);
+        }
+        
+        .category-count {
+            font-size: 0.8rem;
+            color: #666;
+            text-align: right;
+            margin-top: 8px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Connection Status -->
+    <div id="connection-status" class="connection-status connected">
+        <i class="fa-solid fa-wifi"></i> <span>დაკავშირებული</span>
+    </div>
+    
+    <!-- Toast Container -->
+    <div class="toast-container" id="toast-container"></div>
+
+    <div id="app-container">
+        
+        <!-- Info Modal Overlay -->
+        <div id="info-modal" class="absolute inset-0 z-50 bg-black/40 hidden flex items-center justify-center backdrop-blur-sm">
+            <div class="modal-paper relative">
+                <button onclick="closeBonusInfo()" class="absolute top-2 right-2 text-2xl text-gray-400 hover:text-red-500">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+                <h3 class="text-2xl font-bold mb-4 text-indigo-900 border-b border-gray-300 pb-2">
+                    <i class="fa-solid fa-star text-orange-500 mr-2"></i>ბონუს რაუნდი
+                </h3>
+                <p class="text-xl leading-8">
+                    ბონუს კატეგორია ნიშნავს, რომ ყოველ რაუნდში სტანდარტულ კატეგორიებს დაემატება ერთი 
+                    <span class="text-orange-600 font-bold">შემთხვევითი</span> კატეგორია.
+                </p>
+                <p class="mt-4 text-sm text-gray-500"><i class="fa-solid fa-lightbulb text-yellow-500 mr-1"></i> მაგალითად: ბრენდი, ფერი, მუსიკა...</p>
+                <div class="mt-6 text-center">
+                    <button onclick="closeBonusInfo()" class="btn-doodle text-sm px-6 py-2">კარგი</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Countdown Overlay (shown when STOP is pressed) -->
+        <div id="countdown-overlay" class="countdown-overlay hidden">
+            <div class="text-2xl mb-4"><i class="fa-solid fa-hand text-red-400 mr-2"></i> STOP!</div>
+            <div class="countdown-number" id="countdown-number">5</div>
+            <div class="text-lg mt-4" id="stopped-by-text">დასრულებულია</div>
+        </div>
+
+        <!-- === VIEW 1: LOGIN === -->
+        <div id="login-view" class="screen active justify-center">
+            <div class="text-center mb-6">
+                <h1 class="title-3d text-5xl font-bold mb-2 transform -rotate-3 text-indigo-900 drop-shadow-sm">ქალაქობანა</h1>
+            </div>
+
+            <div class="flex flex-col items-center gap-6 w-full max-w-md mx-auto">
+                <div class="relative group">
+                    <div class="avatar-frame" style="width: 80px; height: 80px;">
+                        <img id="avatar-preview" src="https://api.dicebear.com/9.x/notionists-neutral/svg?seed=Guest" alt="Avatar" class="w-full h-full object-cover">
+                    </div>
+                </div>
+
+                <div class="w-full px-6 space-y-4">
+                    <div class="relative">
+                        <input type="text" id="nickname" class="line-input text-center text-xl" placeholder="შენი სახელი..." maxlength="15" oninput="updateAvatarPreview()">
+                        <i class="fa-solid fa-user absolute right-2 top-2 text-gray-400"></i>
+                    </div>
+                </div>
+
+                <div class="flex gap-4 mt-4">
+                    <button onclick="createNewRoom()" class="btn-doodle text-lg bg-green-50 border-green-700 text-green-800">
+                        <i class="fa-solid fa-plus mr-2"></i> შექმნა
+                    </button>
+                    <button onclick="router.go('browse')" class="btn-doodle text-lg bg-indigo-50 border-indigo-700 text-indigo-800">
+                        <i class="fa-solid fa-search mr-2"></i> დათვალიერება
+                    </button>
+                </div>
+                
+                <div class="w-full px-6 mt-4">
+                    <div class="quick-join-box">
+                        <p class="text-sm text-gray-600 mb-3"><i class="fa-solid fa-bolt text-yellow-500 mr-1"></i> სწრაფი შესვლა</p>
+                        <div class="flex gap-2">
+                            <input type="text" id="room-code" class="line-input text-center uppercase flex-1 text-lg" placeholder="კოდი" maxlength="5" style="font-size: 1.2rem;">
+                            <button onclick="quickJoinRoom()" class="btn-doodle text-sm px-4">
+                                <i class="fa-solid fa-arrow-right"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="absolute bottom-6 right-6 opacity-50 decor-pencil">
+                <i class="fa-solid fa-pen-fancy text-5xl text-yellow-600"></i>
+            </div>
+        </div>
+        
+        
+        <!-- === VIEW 1.5: BROWSE LOBBIES === -->
+        <div id="browse-view" class="screen">
+            <div class="nav-container">
+                <button onclick="router.go('login')" class="btn-eraser-real" title="უკან">
+                    <i class="fa-solid fa-arrow-left text-blue-900"></i> <span>უკან</span>
+                </button>
+            </div>
+            
+            <div class="pt-16 pb-4">
+                <h2 class="text-3xl font-bold text-indigo-900 mb-2">
+                    <i class="fa-solid fa-door-open mr-2 text-orange-500"></i>ოთახები
+                </h2>
+                <p class="text-gray-500">იპოვე თამაში ან შექმენი შენი</p>
+            </div>
+            
+            <div class="flex items-center justify-between mb-4">
+                <button onclick="refreshRooms()" class="btn-doodle text-sm px-4 py-2">
+                    <i class="fa-solid fa-rotate" id="refresh-icon"></i> განახლება
+                </button>
+                <span class="text-sm text-gray-400" id="room-count-text">0 ოთახი</span>
+            </div>
+            
+            <!-- Bulletin Board -->
+            <div class="bulletin-board" id="rooms-bulletin">
+                <div class="rooms-loading" id="rooms-loading">
+                    <div class="spinner"></div>
+                </div>
+                
+                <div id="rooms-grid" class="flex flex-wrap gap-6 justify-center hidden">
+                    <!-- Room notes will be populated here -->
+                </div>
+                
+                <div id="no-rooms" class="no-rooms-message hidden">
+                    <i class="fa-solid fa-ghost"></i>
+                    <p class="text-xl font-bold">ოთახები არ მოიძებნა</p>
+                    <p class="mt-2 opacity-70">შექმენი პირველი ოთახი!</p>
+                </div>
+            </div>
+            
+            <div class="mt-6 text-center">
+                <button onclick="createNewRoom()" class="btn-doodle text-xl bg-green-50 border-green-700 text-green-800">
+                    <i class="fa-solid fa-plus mr-2"></i> ახალი ოთახის შექმნა
+                </button>
+            </div>
+        </div>
+
+
+        <!-- === VIEW 2: LOBBY === -->
+        <div id="lobby-view" class="screen">
+            <div class="nav-container">
+                <button onclick="leaveRoom()" class="btn-eraser-real" title="გასვლა">
+                     <span>გასვლა</span>
+                </button>
+            </div>
+
+            <div class="flex justify-between items-end border-b-2 border-indigo-900 pb-2 mb-6 pt-12">
+                <div>
+                    <h2 class="text-4xl font-bold text-indigo-900">მოსაცდელი</h2>
+                    <p class="text-lg text-gray-500">ელოდება მოთამაშეებს...</p>
+                </div>
+                <div class="bg-yellow-200 px-4 py-2 transform rotate-2 shadow-md text-lg border border-yellow-400 cursor-pointer" onclick="copyRoomCode()" title="დააკოპირე კოდი">
+                    <i class="fa-solid fa-hashtag mr-1"></i> <span id="room-code-display" class="font-bold text-xl">-----</span>
+                    <i class="fa-solid fa-copy ml-2 text-sm"></i>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6" id="lobby-players-list">
+                <!-- Players populated by JS -->
+            </div>
+
+            <div class="flex gap-4 flex-wrap justify-center">
+                <!-- Settings Sticky Note -->
+                <div class="sticky-note" style="flex: 1; min-width: 250px;">
+                    <h3 class="font-bold border-b-2 border-gray-400/30 mb-4 text-center text-xl">
+                        <i class="fa-solid fa-sliders mr-2"></i>პარამეტრები
+                    </h3>
+                    
+                    <div class="space-y-4">
+                        <div class="flex items-center justify-between">
+                            <label class="text-lg"><i class="fa-regular fa-clock mr-1 text-gray-600"></i> დრო:</label>
+                            <div class="flex items-center gap-2 bg-white/50 px-2 rounded">
+                                <input type="number" id="min-time-input" class="line-input text-center w-12 text-lg !border-none" value="15" min="5" max="60" onchange="updateSettings()">
+                                <span class="text-sm">წმ</span>
+                            </div>
+                        </div>
+                        
+                        <div class="flex items-center justify-between">
+                            <label class="text-lg"><i class="fa-solid fa-rotate-right mr-1 text-gray-600"></i> რაუნდები:</label>
+                            <div class="bg-white/50 px-2 rounded">
+                                <input type="number" id="max-rounds-input" class="line-input text-center w-12 text-lg !border-none" value="5" min="1" max="20" onchange="updateSettings()">
+                            </div>
+                        </div>
+
+                        <div class="flex items-center justify-between pt-2 border-t border-gray-400/30">
+                            <div class="flex items-center gap-2">
+                                <label class="text-lg cursor-pointer select-none flex items-center" for="bonus-cat-input">
+                                    <i class="fa-solid fa-star text-orange-500 mr-2"></i> ბონუსი:
+                                </label>
+                                <button onclick="toggleBonusInfo()" class="text-indigo-500 hover:text-indigo-700 transition transform hover:scale-110" title="რა არის ეს?">
+                                    <i class="fa-solid fa-circle-info text-xl"></i>
+                                </button>
+                            </div>
+                            <input type="checkbox" id="bonus-cat-input" class="w-6 h-6 accent-indigo-600 cursor-pointer rounded" onchange="updateSettings()">
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Categories Editor -->
+                <div class="category-editor" id="category-editor" style="flex: 1; min-width: 280px;">
+                    <h3 class="font-bold border-b-2 border-gray-400/30 mb-3 text-center text-xl">
+                        <i class="fa-solid fa-list-check mr-2 text-indigo-600"></i>კატეგორიები
+                    </h3>
+                    
+                    <div class="category-list" id="category-list">
+                        <!-- Categories will be populated by JS -->
+                    </div>
+                    
+                    <div class="add-category-row" id="add-category-row">
+                        <input type="text" id="new-category-input" placeholder="ახალი კატეგორია..." maxlength="20" onkeypress="if(event.key==='Enter') addCategory()">
+                        <button onclick="addCategory()"><i class="fa-solid fa-plus"></i></button>
+                    </div>
+                    
+                    <div class="flex justify-between items-center mt-2">
+                        <span class="category-count" id="category-count">0 კატეგორია</span>
+                        <button id="reset-categories-btn" onclick="resetCategoriesToDefault()" class="text-xs text-gray-500 hover:text-indigo-600 transition" style="display: none;">
+                            <i class="fa-solid fa-rotate-left mr-1"></i>აღდგენა
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-6 flex justify-center gap-4">
+                <!-- Ready Button (for non-host) -->
+                <button id="ready-btn" onclick="toggleReady()" class="btn-doodle text-lg px-8 hidden">
+                    <i class="fa-solid fa-check mr-2"></i> მზად ვარ
+                </button>
+                
+                <!-- Start Button (host only) -->
+                <div id="start-btn-container" class="relative inline-block group hidden">
+                    <div class="absolute -inset-1 bg-green-200 rounded-full blur opacity-40 group-hover:opacity-75 transition duration-200"></div>
+                    <button id="start-game-btn" onclick="startGame()" class="btn-doodle text-green-800 border-green-800 bg-green-50 text-2xl px-12 py-4 relative" disabled>
+                        დაწყება <i class="fa-solid fa-play ml-2 text-sm"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <p id="waiting-text" class="text-center text-gray-500 mt-4 hidden">
+                <i class="fa-solid fa-hourglass-half animate-pulse mr-2"></i>
+                ყველა მოთამაშე უნდა იყოს მზად
+            </p>
+        </div>
+
+
+        <!-- === VIEW 3: STICKS (Chxirebi) === -->
+        <div id="sticks-view" class="screen h-full justify-center items-center">
+            <h2 class="title-3d text-3xl mb-6 text-center">ასოს არჩევა...</h2>
+            
+            <!-- Video Container for Hand Writing Animation -->
+            <div class="video-container" id="sticks-video-container">
+                <!-- GIF Animation for hand writing -->
+                <img id="sticks-gif" 
+                     src="hand_writing.gif" 
+                     alt="Hand writing animation"
+                     style="display: none; width: 100%; height: 100%; object-fit: contain;">
+                
+                <!-- Placeholder shown before animation plays -->
+                <div class="placeholder" id="video-placeholder">
+                    <i class="fa-solid fa-pen-fancy"></i>
+                    <p class="text-lg">მზადაა ასოს არჩევისთვის</p>
+                    <p class="text-sm opacity-50 mt-2">დააჭირე ღილაკს</p>
+                </div>
+                
+                <!-- Letter Reveal Overlay -->
+                <div class="letter-reveal" id="letter-reveal">
+                    <div class="big-letter" id="revealed-letter">?</div>
+                </div>
+            </div>
+
+            <div class="mt-8 flex flex-col items-center gap-4">
+                <button id="draw-btn" class="btn-doodle w-40 h-40 rounded-full flex flex-col items-center justify-center text-xl bg-indigo-50 border-4 hover:bg-indigo-100 transition duration-300 hidden" 
+                    onclick="drawLetter()"
+                >
+                    აირჩიე ასო
+                </button>
+                
+                <p id="waiting-for-host" class="text-lg text-gray-500">
+                    <i class="fa-solid fa-hourglass-half animate-pulse mr-2"></i>
+                    ჰოსტი აირჩევს ასოს...
+                </p>
+            </div>
+        </div>
+
+
+        <!-- === VIEW 4: GAME === -->
+        <div id="game-view" class="screen pb-32 pt-20">
+            <div class="nav-container">
+                <button onclick="if(confirm('ნამდვილად გსურს გასვლა?')) leaveRoom()" class="btn-eraser-real">
+                     <span>გასვლა</span>
+                </button>
+            </div>
+            
+            <!-- Round Counter -->
+            <div class="absolute top-4 right-6 text-gray-500 text-xl font-bold bg-white/60 px-3 py-1 rounded-lg transform rotate-2 shadow-sm border border-gray-200">
+                <i class="fa-solid fa-arrows-rotate mr-1 text-sm"></i> რაუნდი <span id="current-round-display" class="text-indigo-600">1</span> / <span id="max-round-display">5</span>
+            </div>
+
+            <!-- Header -->
+            <div class="flex justify-between items-center mb-8 px-2">
+                <div class="circled-letter" id="game-letter-display">
+                    ?
+                </div>
+                <div class="relative">
+                    <button id="btn-game-stop" onclick="stopRound()" class="btn-doodle btn-stop bg-red-50 flex items-center gap-2" disabled>
+                        <i class="fa-solid fa-hand text-red-500"></i> STOP
+                    </button>
+                    <!-- Timer Bubble -->
+                    <div id="stop-timer-display" class="absolute -top-3 -right-3 bg-indigo-600 text-white w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold shadow-md transition-opacity duration-300">
+                        15
+                    </div>
+                </div>
+            </div>
+
+            <!-- Form -->
+            <div class="space-y-5 px-2" id="game-inputs-container">
+                <!-- Categories populated by JS -->
+            </div>
+
+            <!-- Sidebar Avatars -->
+            <div class="fixed left-4 top-1/2 transform -translate-y-1/2 flex flex-col gap-4 z-20 hidden sm:flex" id="game-players-sidebar">
+                <!-- Populated by JS -->
+            </div>
+        </div>
+
+        <!-- === VIEW 5: RESULTS === -->
+        <div id="results-view" class="screen pt-20">
+            <div class="nav-container">
+                 <button onclick="returnToLobby()" class="btn-eraser-real" id="back-to-lobby-btn">
+                    <i class="fa-solid fa-house text-blue-900"></i> <span>მთავარი</span>
+                </button>
+            </div>
+
+            <h2 class="title-3d text-5xl font-bold text-center text-red-600 mb-2 transform -rotate-1">
+                <i class="fa-solid fa-check-double mr-2"></i>შემოწმება
+            </h2>
+            <p class="text-lg text-center text-gray-400 mb-8 italic">შეამოწმეთ თითოეული მოთამაშის პასუხები</p>
+
+            <!-- Player Navigation for Review -->
+            <div class="flex items-center justify-center gap-6 mb-6">
+                <button onclick="prevPlayer()" class="text-3xl text-indigo-800 hover:scale-110 transition"><i class="fa-solid fa-chevron-left"></i></button>
+                
+                <div class="polaroid transform rotate-2 transition duration-300 hover:scale-105">
+                    <div class="relative">
+                        <img id="review-avatar" src="" class="bg-gray-100">
+                        <i id="review-crown" class="fa-solid fa-crown text-yellow-400 absolute -top-4 -right-4 text-4xl drop-shadow-md hidden"></i>
+                    </div>
+                    <div class="mt-2 text-2xl font-bold" id="review-nick">Player</div>
+                    <div class="text-4xl font-bold text-red-600 mt-1 font-mono" id="review-score">+0</div>
+                </div>
+
+                <button onclick="nextPlayer()" class="text-3xl text-indigo-800 hover:scale-110 transition"><i class="fa-solid fa-chevron-right"></i></button>
+            </div>
+
+            <!-- Score Table -->
+            <div class="w-full select-none bg-white/40 p-4 rounded-lg shadow-inner mb-8" id="results-table">
+                <!-- JS will populate -->
+            </div>
+
+            <div class="mt-auto text-center pb-10">
+                <button id="next-round-btn" onclick="nextRound()" class="btn-doodle text-xl px-10 flex items-center gap-2 mx-auto hidden">
+                    შემდეგი რაუნდი <i class="fa-solid fa-arrow-right"></i>
+                </button>
+            </div>
+        </div>
+        
+        <!-- === VIEW 6: GAME ENDED === -->
+        <div id="ended-view" class="screen justify-center items-center">
+            <h2 class="title-3d text-5xl font-bold text-center text-indigo-900 mb-8">
+                <i class="fa-solid fa-trophy text-yellow-500 mr-3"></i>თამაში დასრულდა!
+            </h2>
+            
+            <div class="podium mb-8" id="podium-container">
+                <!-- Populated by JS -->
+            </div>
+            
+            <div class="w-full max-w-md bg-white/60 rounded-lg p-4 shadow-inner" id="final-standings">
+                <!-- Full standings -->
+            </div>
+            
+            <div class="mt-8 text-center">
+                <button onclick="returnToLobby()" class="btn-doodle text-xl px-10" id="ended-back-btn">
+                    <i class="fa-solid fa-rotate-left mr-2"></i> ახალი თამაში
+                </button>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // ============== STATE ==============
+        let socket = null;
+        let sessionId = localStorage.getItem('kalakobana_session') || generateSessionId();
+        let currentPlayerId = localStorage.getItem('kalakobana_playerId') || null;
+        let currentRoomCode = localStorage.getItem('kalakobana_roomCode') || null;
+        let roomData = null;
+        let isHost = false;
+        let isReady = false;
+        let reviewIndex = 0;
+        let resultsData = null;
+        let localAnswers = {};
+        let stopTimer = null;
+        
+        // Store session
+        localStorage.setItem('kalakobana_session', sessionId);
+        
+        function generateSessionId() {
+            return 'sess_' + Math.random().toString(36).substring(2, 15);
+        }
+        
+        // ============== SOCKET CONNECTION ==============
+        let isRestoringSession = false;
+        
+        function connectSocket() {
+            socket = io({
+                reconnection: true,
+                reconnectionAttempts: Infinity,
+                reconnectionDelay: 500,
+                reconnectionDelayMax: 3000,
+                timeout: 10000
+            });
+            
+            // Connection events
+            socket.on('connect', () => {
+                console.log('Connected to server, socket.id:', socket.id);
+                updateConnectionStatus('connected');
+                
+                // Try to restore session if we have stored credentials
+                const storedPlayerId = localStorage.getItem('kalakobana_playerId');
+                const storedRoomCode = localStorage.getItem('kalakobana_roomCode');
+                
+                console.log('Checking for stored session:', { storedPlayerId, storedRoomCode, sessionId });
+                
+                if (storedPlayerId && storedRoomCode && !isRestoringSession) {
+                    isRestoringSession = true;
+                    console.log('Attempting to restore session...');
+                    socket.emit('session:restore', { 
+                        sessionId: sessionId, 
+                        playerId: storedPlayerId 
+                    });
+                }
+            });
+            
+            socket.on('disconnect', (reason) => {
+                console.log('Disconnected from server:', reason);
+                updateConnectionStatus('disconnected');
+                isRestoringSession = false;
+            });
+            
+            socket.on('connect_error', (error) => {
+                console.log('Connection error:', error.message);
+                updateConnectionStatus('reconnecting');
+            });
+            
+            // Session restored
+            socket.on('session:restored', (data) => {
+                isRestoringSession = false;
+                console.log('Session restore result:', data);
+                
+                if (data.success) {
+                    showToast('🔄 სესია აღდგენილია!');
+                    currentPlayerId = data.playerId;
+                    currentRoomCode = data.roomCode;
+                    roomData = data.roomData;
+                    isHost = data.playerData.isHost;
+                    
+                    // Update localStorage to ensure consistency
+                    localStorage.setItem('kalakobana_playerId', currentPlayerId);
+                    localStorage.setItem('kalakobana_roomCode', currentRoomCode);
+                    
+                    // Restore nickname in the input field
+                    const nicknameInput = document.getElementById('nickname');
+                    if (nicknameInput && data.playerData.nick) {
+                        nicknameInput.value = data.playerData.nick;
+                        updateAvatarPreview();
+                    }
+                    
+                    console.log('Session restored, navigating to phase:', roomData.gameState.phase);
+                    
+                    // Navigate to appropriate view based on game phase
+                    handlePhaseChange(roomData.gameState.phase);
+                } else {
+                    console.log('Session restore failed, clearing stored data');
+                    // Clear stored data
+                    localStorage.removeItem('kalakobana_playerId');
+                    localStorage.removeItem('kalakobana_roomCode');
+                    currentPlayerId = null;
+                    currentRoomCode = null;
+                    roomData = null;
+                    isHost = false;
+                    isReady = false;
+                }
+            });
+            
+            // Room events
+            socket.on('room:created', (data) => {
+                currentPlayerId = data.playerId;
+                currentRoomCode = data.roomCode;
+                roomData = data.roomData;
+                isHost = true;
+                isReady = true;
+                
+                localStorage.setItem('kalakobana_playerId', currentPlayerId);
+                localStorage.setItem('kalakobana_roomCode', currentRoomCode);
+                
+                showToast('✨ ოთახი შეიქმნა: ' + data.roomCode);
+                updateLobbyUI();
+                router.go('lobby');
+            });
+            
+            socket.on('room:joined', (data) => {
+                currentPlayerId = data.playerId;
+                currentRoomCode = data.roomCode;
+                roomData = data.roomData;
+                isHost = false;
+                isReady = false;
+                
+                localStorage.setItem('kalakobana_playerId', currentPlayerId);
+                localStorage.setItem('kalakobana_roomCode', currentRoomCode);
+                
+                showToast('🎮 შეუერთდი ოთახს: ' + data.roomCode);
+                updateLobbyUI();
+                router.go('lobby');
+            });
+            
+            socket.on('room:error', (data) => {
+                showToast('❌ ' + data.message);
+            });
+            
+            socket.on('room:update', (data) => {
+                roomData = data;
+                isHost = data.hostId === currentPlayerId;
+                updateLobbyUI();
+                updateGameSidebar();
+            });
+            
+            socket.on('room:left', () => {
+                clearSession();
+                router.go('login');
+            });
+            
+            // Player events
+            socket.on('player:joined', (player) => {
+                showToast('👋 ' + player.nick + ' შემოვიდა');
+            });
+            
+            socket.on('player:left', (data) => {
+                const message = data.kicked ? '🚫 ' + data.nick + ' გაითიშა' : '👋 ' + data.nick + ' გავიდა';
+                showToast(message);
+            });
+            
+            socket.on('player:disconnected', (data) => {
+                showToast('⚠️ ' + data.nick + ' გათიშულია...');
+            });
+            
+            socket.on('player:reconnected', (data) => {
+                showToast('✅ ' + data.nick + ' დაბრუნდა');
+            });
+            
+            socket.on('player:kicked', () => {
+                showToast('🚫 გაგაგდეს ოთახიდან');
+                clearSession();
+                router.go('login');
+            });
+            
+            socket.on('player:readyChanged', (data) => {
+                // Visual feedback already handled by room:update
+            });
+            
+            socket.on('host:changed', (data) => {
+                if (data.newHostId === currentPlayerId) {
+                    isHost = true;
+                    showToast('👑 შენ გახდი ჰოსტი!');
+                }
+                updateLobbyUI();
+            });
+            
+            // Game events
+            socket.on('game:started', (data) => {
+                roomData = data;
+                showToast('🎮 თამაში დაიწყო!');
+            });
+            
+            socket.on('phase:sticks', () => {
+                router.go('sticks');
+                updateSticksUI();
+            });
+            
+            socket.on('sticks:drawing', (data) => {
+                startDrawingAnimation(data.duration);
+            });
+            
+            socket.on('sticks:result', (data) => {
+                finishDrawingAnimation(data.letter);
+            });
+            
+            socket.on('round:start', (data) => {
+                startRoundUI(data);
+            });
+            
+            socket.on('stop:enabled', () => {
+                document.getElementById('btn-game-stop').disabled = false;
+                document.getElementById('stop-timer-display').style.opacity = '0';
+            });
+            
+            socket.on('player:isTyping', (data) => {
+                updateTypingIndicator(data.playerId, data.category);
+            });
+            
+            socket.on('player:submitted', (data) => {
+                updatePlayerSubmitted(data.playerId);
+            });
+            
+            socket.on('all:submitted', () => {
+                showToast('✅ ყველამ დაასრულა!');
+            });
+            
+            socket.on('round:stopped', (data) => {
+                showCountdown(data.stoppedBy, data.countdown);
+            });
+            
+            socket.on('round:results', (data) => {
+                resultsData = data;
+                reviewIndex = 0;
+                showResultsUI(data);
+            });
+            
+            socket.on('answer:toggled', (data) => {
+                // Update results display if viewing that player
+                if (resultsData) {
+                    const player = resultsData.results.find(p => p.id === data.targetPlayerId);
+                    if (player) {
+                        player.categoryScores = data.categoryScores;
+                        player.roundScore = data.roundScore;
+                        player.totalScore = data.totalScore;
+                        
+                        if (resultsData.results[reviewIndex].id === data.targetPlayerId) {
+                            renderPlayerReview();
+                        }
+                    }
+                }
+            });
+            
+            socket.on('game:ended', (data) => {
+                showFinalStandings(data.standings);
+            });
+            
+            socket.on('game:reset', (data) => {
+                roomData = data;
+                isReady = isHost;
+                updateLobbyUI();
+                router.go('lobby');
+            });
+            
+            socket.on('settings:changed', (settings) => {
+                document.getElementById('min-time-input').value = settings.minTime;
+                document.getElementById('max-rounds-input').value = settings.maxRounds;
+                document.getElementById('bonus-cat-input').checked = settings.useBonus;
+                
+                // Update categories
+                if (settings.categories) {
+                    customCategories = [...settings.categories];
+                    if (roomData && roomData.settings) {
+                        roomData.settings.categories = settings.categories;
+                    }
+                    renderCategoryList();
+                }
+            });
+            
+            socket.on('game:error', (data) => {
+                showToast('❌ ' + data.message);
+            });
+        }
+        
+        // ============== UI HELPERS ==============
+        function updateConnectionStatus(status) {
+            const el = document.getElementById('connection-status');
+            el.className = 'connection-status ' + status;
+            
+            const texts = {
+                'connected': '<i class="fa-solid fa-wifi"></i> დაკავშირებული',
+                'disconnected': '<i class="fa-solid fa-wifi-slash"></i> გათიშული',
+                'reconnecting': '<i class="fa-solid fa-rotate"></i> დაკავშირება მიმდინარეობს...'
+            };
+            
+            el.innerHTML = texts[status] || texts.connected;
+        }
+        
+        function showToast(message) {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+            toast.textContent = message;
+            container.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+        
+        const router = {
+            go: (viewId) => {
+                const activeScreen = document.querySelector('.screen.active');
+                const nextScreen = document.getElementById(viewId + '-view');
+                
+                if (activeScreen && activeScreen.id !== nextScreen.id) {
+                    activeScreen.classList.add('page-exit');
+                    activeScreen.classList.remove('active');
+                    nextScreen.classList.add('page-enter');
+                    setTimeout(() => {
+                        nextScreen.classList.remove('page-enter');
+                        nextScreen.classList.add('active');
+                        activeScreen.classList.remove('page-exit');
+                    }, 900); 
+                } else {
+                    if(activeScreen) activeScreen.classList.remove('active');
+                    nextScreen.classList.add('active');
+                }
+                
+                // Trigger view-specific actions
+                if (viewId === 'browse') {
+                    refreshRooms();
+                }
+            }
+        };
+        
+        function handlePhaseChange(phase) {
+            console.log('Handling phase change to:', phase);
+            
+            switch(phase) {
+                case 'lobby':
+                    updateLobbyUI();
+                    router.go('lobby');
+                    break;
+                case 'sticks':
+                    router.go('sticks');
+                    updateSticksUI();
+                    break;
+                case 'playing':
+                case 'stopped':
+                    // Restore game UI with current state
+                    if (roomData && roomData.gameState) {
+                        restoreGameUI(roomData.gameState);
+                    }
+                    router.go('game');
+                    break;
+                case 'results':
+                    router.go('results');
+                    break;
+                case 'ended':
+                    router.go('ended');
+                    break;
+                default:
+                    console.log('Unknown phase:', phase);
+                    router.go('login');
+            }
+        }
+        
+        // Restore game UI when reconnecting mid-game
+        function restoreGameUI(gameState) {
+            console.log('Restoring game UI with state:', gameState);
+            
+            document.getElementById('current-round-display').textContent = gameState.currentRound;
+            document.getElementById('max-round-display').textContent = roomData.settings.maxRounds;
+            document.getElementById('game-letter-display').textContent = gameState.currentLetter;
+            
+            // Build inputs for categories
+            const container = document.getElementById('game-inputs-container');
+            container.innerHTML = '';
+            
+            if (gameState.activeCategories) {
+                Object.entries(gameState.activeCategories).forEach(([key, label]) => {
+                    const div = document.createElement('div');
+                    div.className = 'game-row flex items-baseline gap-2 mb-2';
+                    const labelClass = key === 'bonus' ? 'text-orange-600 font-bold' : 'text-gray-700';
+                    const icon = key === 'bonus' ? '<i class="fa-solid fa-star text-xs mr-1"></i>' : '';
+                    
+                    // Restore any saved local answers
+                    const savedValue = localAnswers[key] || '';
+                    
+                    div.innerHTML = `
+                        <label class="${labelClass} text-xl w-32 text-right">${icon}${label}:</label>
+                        <input type="text" class="line-input" data-cat="${key}" autocomplete="off" 
+                               value="${savedValue}"
+                               oninput="onAnswerInput('${key}', this.value)">
+                    `;
+                    container.appendChild(div);
+                });
+            }
+            
+            // Update stop button state
+            const stopBtn = document.getElementById('btn-game-stop');
+            const timerDisplay = document.getElementById('stop-timer-display');
+            
+            if (gameState.timerEnabled) {
+                stopBtn.disabled = false;
+                timerDisplay.style.opacity = '0';
+            } else {
+                stopBtn.disabled = true;
+                timerDisplay.style.opacity = '1';
+                timerDisplay.textContent = '...';
+            }
+            
+            // If round is stopped, disable inputs
+            if (gameState.phase === 'stopped') {
+                document.querySelectorAll('#game-inputs-container input').forEach(inp => {
+                    inp.disabled = true;
+                    inp.parentElement.classList.add('opacity-50');
+                });
+                stopBtn.disabled = true;
+            }
+            
+            updateGameSidebar();
+        }
+        
+        // ============== CATEGORY MANAGEMENT ==============
+        const DEFAULT_CATEGORIES = ['ქალაქი', 'სოფელი', 'სახელი', 'გვარი', 'ცხოველი', 'ფრინველი', 'მცენარე'];
+        let customCategories = [...DEFAULT_CATEGORIES];
+        
+        function renderCategoryList() {
+            const list = document.getElementById('category-list');
+            const countEl = document.getElementById('category-count');
+            const addRow = document.getElementById('add-category-row');
+            const resetBtn = document.getElementById('reset-categories-btn');
+            
+            if (!list) return;
+            
+            // Use roomData categories if available, otherwise use local
+            const categories = (roomData && roomData.settings && roomData.settings.categories) 
+                ? roomData.settings.categories 
+                : customCategories;
+            
+            list.innerHTML = '';
+            
+            categories.forEach((cat, index) => {
+                const item = document.createElement('div');
+                item.className = 'category-item';
+                item.innerHTML = `
+                    <span class="drag-handle"><i class="fa-solid fa-grip-vertical"></i></span>
+                    <input type="text" value="${cat}" 
+                           ${isHost ? '' : 'disabled'} 
+                           onchange="updateCategory(${index}, this.value)"
+                           maxlength="20">
+                    ${isHost ? `<span class="delete-btn" onclick="removeCategory(${index})"><i class="fa-solid fa-xmark"></i></span>` : ''}
+                `;
+                list.appendChild(item);
+            });
+            
+            countEl.textContent = `${categories.length} კატეგორია`;
+            
+            // Show/hide add row based on host status and max categories
+            if (addRow) {
+                addRow.style.display = isHost && categories.length < 15 ? 'flex' : 'none';
+            }
+            
+            // Show reset button only for host
+            if (resetBtn) {
+                resetBtn.style.display = isHost ? 'inline' : 'none';
+            }
+        }
+        
+        function addCategory() {
+            if (!isHost) return;
+            
+            const input = document.getElementById('new-category-input');
+            const name = input.value.trim();
+            
+            if (!name) {
+                showToast('⚠️ შეიყვანეთ კატეგორიის სახელი');
+                return;
+            }
+            
+            const categories = (roomData && roomData.settings && roomData.settings.categories) 
+                ? [...roomData.settings.categories] 
+                : [...customCategories];
+            
+            if (categories.length >= 15) {
+                showToast('⚠️ მაქსიმუმ 15 კატეგორია');
+                return;
+            }
+            
+            if (categories.includes(name)) {
+                showToast('⚠️ ეს კატეგორია უკვე არსებობს');
+                return;
+            }
+            
+            categories.push(name);
+            input.value = '';
+            
+            // Update settings on server
+            socket.emit('settings:update', { categories });
+            
+            // Update local state temporarily
+            if (roomData && roomData.settings) {
+                roomData.settings.categories = categories;
+            }
+            customCategories = categories;
+            renderCategoryList();
+        }
+        
+        function removeCategory(index) {
+            if (!isHost) return;
+            
+            const categories = (roomData && roomData.settings && roomData.settings.categories) 
+                ? [...roomData.settings.categories] 
+                : [...customCategories];
+            
+            if (categories.length <= 1) {
+                showToast('⚠️ მინიმუმ 1 კატეგორია საჭიროა');
+                return;
+            }
+            
+            categories.splice(index, 1);
+            
+            // Update settings on server
+            socket.emit('settings:update', { categories });
+            
+            // Update local state temporarily
+            if (roomData && roomData.settings) {
+                roomData.settings.categories = categories;
+            }
+            customCategories = categories;
+            renderCategoryList();
+        }
+        
+        function updateCategory(index, newName) {
+            if (!isHost) return;
+            
+            const name = newName.trim();
+            if (!name) {
+                renderCategoryList(); // Reset to previous value
+                return;
+            }
+            
+            const categories = (roomData && roomData.settings && roomData.settings.categories) 
+                ? [...roomData.settings.categories] 
+                : [...customCategories];
+            
+            // Check for duplicates (excluding current index)
+            if (categories.some((cat, i) => i !== index && cat === name)) {
+                showToast('⚠️ ეს კატეგორია უკვე არსებობს');
+                renderCategoryList();
+                return;
+            }
+            
+            categories[index] = name;
+            
+            // Update settings on server
+            socket.emit('settings:update', { categories });
+            
+            // Update local state temporarily
+            if (roomData && roomData.settings) {
+                roomData.settings.categories = categories;
+            }
+            customCategories = categories;
+        }
+        
+        function resetCategoriesToDefault() {
+            if (!isHost) return;
+            
+            customCategories = [...DEFAULT_CATEGORIES];
+            socket.emit('settings:update', { categories: customCategories });
+            
+            if (roomData && roomData.settings) {
+                roomData.settings.categories = customCategories;
+            }
+            renderCategoryList();
+            showToast('✅ კატეგორიები აღდგა');
+        }
+        
+        // ============== LOBBY BROWSER ==============
+        let availableRooms = [];
+        const noteColors = ['pink', 'blue', 'green', 'orange', 'purple', ''];
+        
+        async function refreshRooms() {
+            const loading = document.getElementById('rooms-loading');
+            const grid = document.getElementById('rooms-grid');
+            const noRooms = document.getElementById('no-rooms');
+            const countText = document.getElementById('room-count-text');
+            const refreshIcon = document.getElementById('refresh-icon');
+            
+            // Spin the refresh icon
+            refreshIcon.classList.add('fa-spin');
+            
+            loading.classList.remove('hidden');
+            grid.classList.add('hidden');
+            noRooms.classList.add('hidden');
+            
+            try {
+                const response = await fetch('/api/rooms');
+                availableRooms = await response.json();
+                
+                loading.classList.add('hidden');
+                countText.textContent = `${availableRooms.length} ოთახი`;
+                
+                if (availableRooms.length === 0) {
+                    noRooms.classList.remove('hidden');
+                } else {
+                    renderRoomNotes();
+                    grid.classList.remove('hidden');
+                }
+            } catch (err) {
+                console.error('Failed to fetch rooms:', err);
+                loading.classList.add('hidden');
+                noRooms.classList.remove('hidden');
+                showToast('❌ ოთახების ჩატვირთვა ვერ მოხერხდა');
+            }
+            
+            setTimeout(() => refreshIcon.classList.remove('fa-spin'), 500);
+        }
+        
+        function renderRoomNotes() {
+            const grid = document.getElementById('rooms-grid');
+            grid.innerHTML = '';
+            
+            availableRooms.forEach((room, index) => {
+                const colorClass = noteColors[index % noteColors.length];
+                const rotation = (Math.random() * 10 - 5).toFixed(1);
+                
+                const note = document.createElement('div');
+                note.className = `room-note ${colorClass}`;
+                note.style.transform = `rotate(${rotation}deg)`;
+                note.onclick = () => joinRoomFromBrowse(room.code);
+                
+                // Create player dots
+                let dotsHTML = '';
+                for (let i = 0; i < 8; i++) {
+                    dotsHTML += `<div class="player-dot ${i < room.playerCount ? '' : 'empty'}"></div>`;
+                }
+                
+                note.innerHTML = `
+                    <div class="flex items-center gap-2 mb-2">
+                        <div class="w-10 h-10 rounded-full border-2 border-gray-600 overflow-hidden bg-white">
+                            <img src="https://api.dicebear.com/9.x/notionists-neutral/svg?seed=${encodeURIComponent(room.hostAvatar)}" class="w-full h-full">
+                        </div>
+                        <div class="flex-1">
+                            <div class="font-bold text-sm truncate">${room.hostName}</div>
+                            <div class="text-xs text-gray-600"><i class="fa-solid fa-crown text-yellow-600 text-xs"></i> ჰოსტი</div>
+                        </div>
+                    </div>
+                    
+                    <div class="text-xs text-gray-600 mb-2">
+                        <span class="mr-2"><i class="fa-solid fa-rotate-right"></i> ${room.settings.rounds} რაუნდი</span>
+                        ${room.settings.hasBonus ? '<span class="text-orange-600"><i class="fa-solid fa-star"></i> ბონუსი</span>' : ''}
+                    </div>
+                    
+                    <div class="player-dots">
+                        ${dotsHTML}
+                    </div>
+                    <div class="text-xs text-gray-500 mt-1">${room.playerCount}/8 მოთამაშე</div>
+                    
+                    <div class="room-code-tag">#${room.code}</div>
+                `;
+                
+                grid.appendChild(note);
+            });
+        }
+        
+        function joinRoomFromBrowse(code) {
+            const nick = document.getElementById('nickname').value.trim();
+            if (!nick) {
+                showToast('⚠️ გთხოვთ შეიყვანოთ სახელი');
+                router.go('login');
+                return;
+            }
+            
+            socket.emit('room:join', {
+                roomCode: code,
+                nick,
+                avatarSeed: nick,
+                sessionId
+            });
+        }
+        
+        // ============== LOBBY FUNCTIONS ==============
+        function updateAvatarPreview() {
+            const nick = document.getElementById('nickname').value || 'Guest';
+            const url = `https://api.dicebear.com/9.x/notionists-neutral/svg?seed=${encodeURIComponent(nick)}`;
+            document.getElementById('avatar-preview').src = url;
+        }
+        
+        function createNewRoom() {
+            const nick = document.getElementById('nickname').value.trim();
+            
+            if (!nick) {
+                showToast('⚠️ გთხოვთ შეიყვანოთ სახელი');
+                return;
+            }
+            
+            socket.emit('room:create', {
+                nick,
+                avatarSeed: nick,
+                sessionId
+            });
+        }
+        
+        function quickJoinRoom() {
+            const nick = document.getElementById('nickname').value.trim();
+            const roomCode = document.getElementById('room-code').value.trim().toUpperCase();
+            
+            if (!nick) {
+                showToast('⚠️ გთხოვთ შეიყვანოთ სახელი');
+                return;
+            }
+            
+            if (!roomCode) {
+                showToast('⚠️ შეიყვანეთ ოთახის კოდი');
+                return;
+            }
+            
+            socket.emit('room:join', {
+                roomCode,
+                nick,
+                avatarSeed: nick,
+                sessionId
+            });
+        }
+        
+        function joinOrCreateRoom() {
+            const nick = document.getElementById('nickname').value.trim();
+            const roomCode = document.getElementById('room-code').value.trim().toUpperCase();
+            
+            if (!nick) {
+                showToast('⚠️ გთხოვთ შეიყვანოთ სახელი');
+                return;
+            }
+            
+            if (roomCode) {
+                socket.emit('room:join', {
+                    roomCode,
+                    nick,
+                    avatarSeed: nick,
+                    sessionId
+                });
+            } else {
+                socket.emit('room:create', {
+                    nick,
+                    avatarSeed: nick,
+                    sessionId
+                });
+            }
+        }
+        
+        function updateLobbyUI() {
+            if (!roomData) return;
+            
+            // Room code
+            document.getElementById('room-code-display').textContent = roomData.code;
+            
+            // Settings (only host can edit)
+            const inputs = document.querySelectorAll('.sticky-note input');
+            inputs.forEach(inp => {
+                inp.disabled = !isHost;
+            });
+            
+            // Update settings values
+            document.getElementById('min-time-input').value = roomData.settings.minTime;
+            document.getElementById('max-rounds-input').value = roomData.settings.maxRounds;
+            document.getElementById('bonus-cat-input').checked = roomData.settings.useBonus;
+            
+            // Update categories from room settings
+            if (roomData.settings.categories) {
+                customCategories = [...roomData.settings.categories];
+            }
+            renderCategoryList();
+            
+            // Players list
+            const list = document.getElementById('lobby-players-list');
+            list.innerHTML = '';
+            
+            roomData.players.forEach(player => {
+                const isMe = player.id === currentPlayerId;
+                const card = document.createElement('div');
+                card.className = `player-card flex items-center gap-4 bg-white/50 p-3 rounded-lg border border-gray-200 shadow-sm ${player.isConnected ? '' : 'disconnected'} ${player.isReady ? 'ready' : ''}`;
+                card.style.transform = `rotate(${Math.random() * 4 - 2}deg)`;
+                
+                card.innerHTML = `
+                    <div class="w-14 h-14 rounded-full border-2 ${isMe ? 'border-indigo-600' : 'border-gray-400'} overflow-hidden bg-white shadow-sm">
+                        <img src="https://api.dicebear.com/9.x/notionists-neutral/svg?seed=${encodeURIComponent(player.avatarSeed)}" class="w-full h-full">
+                    </div>
+                    <div class="flex-1">
+                        <div class="flex items-center gap-2">
+                            <span class="font-bold text-xl ${isMe ? 'text-indigo-700' : ''}">${player.nick}</span>
+                            ${player.isHost ? '<i class="fa-solid fa-crown text-yellow-500" title="ჰოსტი"></i>' : ''}
+                            ${isMe ? '<span class="text-xs bg-indigo-100 text-indigo-600 px-2 py-0.5 rounded">შენ</span>' : ''}
+                        </div>
+                        <div class="flex items-center gap-2 mt-1">
+                            ${player.isReady ? 
+                                '<span class="text-green-600 text-sm font-bold"><i class="fa-solid fa-check mr-1"></i>მზადაა</span>' : 
+                                '<span class="text-gray-400 text-sm">ელოდება...</span>'}
+                            ${!player.isConnected ? '<span class="text-red-500 text-xs"><i class="fa-solid fa-wifi-slash"></i></span>' : ''}
+                        </div>
+                    </div>
+                    ${isHost && !isMe ? `<button onclick="kickPlayer('${player.id}')" class="text-red-400 hover:text-red-600 text-lg" title="გაგდება"><i class="fa-solid fa-user-xmark"></i></button>` : ''}
+                `;
+                
+                list.appendChild(card);
+            });
+            
+            // Show appropriate buttons
+            const readyBtn = document.getElementById('ready-btn');
+            const startContainer = document.getElementById('start-btn-container');
+            const startBtn = document.getElementById('start-game-btn');
+            const waitingText = document.getElementById('waiting-text');
+            
+            if (isHost) {
+                readyBtn.classList.add('hidden');
+                startContainer.classList.remove('hidden');
+                
+                // Check if all players are ready
+                const allReady = roomData.players.every(p => !p.isConnected || p.isReady);
+                startBtn.disabled = !allReady || roomData.players.length < 1;
+                
+                waitingText.classList.toggle('hidden', allReady);
+            } else {
+                readyBtn.classList.remove('hidden');
+                startContainer.classList.add('hidden');
+                waitingText.classList.add('hidden');
+                
+                // Update ready button state
+                const me = roomData.players.find(p => p.id === currentPlayerId);
+                isReady = me ? me.isReady : false;
+                
+                if (isReady) {
+                    readyBtn.innerHTML = '<i class="fa-solid fa-xmark mr-2"></i> გაუქმება';
+                    readyBtn.classList.add('bg-green-100', 'border-green-600', 'text-green-800');
+                } else {
+                    readyBtn.innerHTML = '<i class="fa-solid fa-check mr-2"></i> მზად ვარ';
+                    readyBtn.classList.remove('bg-green-100', 'border-green-600', 'text-green-800');
+                }
+            }
+        }
+        
+        function toggleReady() {
+            isReady = !isReady;
+            socket.emit('player:ready', { ready: isReady });
+        }
+        
+        function updateSettings() {
+            if (!isHost) return;
+            
+            socket.emit('settings:update', {
+                minTime: parseInt(document.getElementById('min-time-input').value) || 15,
+                maxRounds: parseInt(document.getElementById('max-rounds-input').value) || 5,
+                useBonus: document.getElementById('bonus-cat-input').checked
+            });
+        }
+        
+        function startGame() {
+            if (!isHost) return;
+            socket.emit('game:start');
+        }
+        
+        function copyRoomCode() {
+            navigator.clipboard.writeText(roomData.code);
+            showToast('📋 კოდი დაკოპირებულია: ' + roomData.code);
+        }
+        
+        function kickPlayer(playerId) {
+            if (!isHost) return;
+            if (confirm('ნამდვილად გსურთ ამ მოთამაშის გაგდე?')) {
+                socket.emit('player:kick', { targetPlayerId: playerId });
+            }
+        }
+        
+        function leaveRoom() {
+            socket.emit('room:leave');
+            clearSession();
+            router.go('login');
+        }
+        
+        function clearSession() {
+            localStorage.removeItem('kalakobana_playerId');
+            localStorage.removeItem('kalakobana_roomCode');
+            currentPlayerId = null;
+            currentRoomCode = null;
+            roomData = null;
+            isHost = false;
+            isReady = false;
+        }
+        
+        // ============== STICKS (LETTER SELECTION) ==============
+        function updateSticksUI() {
+            const drawBtn = document.getElementById('draw-btn');
+            const waitingText = document.getElementById('waiting-for-host');
+            const letterReveal = document.getElementById('letter-reveal');
+            const placeholder = document.getElementById('video-placeholder');
+            const gif = document.getElementById('sticks-gif');
+            
+            // Reset the view
+            letterReveal.classList.remove('show');
+            placeholder.style.display = 'flex';
+            placeholder.innerHTML = `
+                <i class="fa-solid fa-pen-fancy"></i>
+                <p class="text-lg">მზადაა ასოს არჩევისთვის</p>
+                <p class="text-sm opacity-50 mt-2">დააჭირე ღილაკს</p>
+            `;
+            gif.style.display = 'none';
+            
+            if (isHost) {
+                drawBtn.classList.remove('hidden');
+                drawBtn.disabled = false;
+                waitingText.classList.add('hidden');
+            } else {
+                drawBtn.classList.add('hidden');
+                waitingText.classList.remove('hidden');
+            }
+        }
+        
+        function drawLetter() {
+            if (!isHost) return;
+            document.getElementById('draw-btn').disabled = true;
+            socket.emit('sticks:draw');
+        }
+        
+        function startDrawingAnimation(duration) {
+            const gif = document.getElementById('sticks-gif');
+            const placeholder = document.getElementById('video-placeholder');
+            const letterReveal = document.getElementById('letter-reveal');
+            
+            // Hide placeholder, show GIF
+            placeholder.style.display = 'none';
+            letterReveal.classList.remove('show');
+            
+            // Force GIF to restart by resetting src
+            const gifSrc = gif.src;
+            gif.src = '';
+            gif.src = gifSrc + '?t=' + Date.now(); // Add cache buster to restart GIF
+            gif.style.display = 'block';
+            
+            console.log('Started GIF animation for', duration, 'ms');
+        }
+        
+        function finishDrawingAnimation(letter) {
+            const gif = document.getElementById('sticks-gif');
+            const placeholder = document.getElementById('video-placeholder');
+            const letterReveal = document.getElementById('letter-reveal');
+            const revealedLetter = document.getElementById('revealed-letter');
+            
+            // Hide GIF
+            gif.style.display = 'none';
+            placeholder.style.display = 'none';
+            
+            // Show the letter reveal
+            revealedLetter.textContent = letter;
+            letterReveal.classList.add('show');
+            
+            document.getElementById('draw-btn').disabled = false;
+            console.log('Letter revealed:', letter);
+        }
+        
+        // ============== GAME PLAY ==============
+        function startRoundUI(data) {
+            localAnswers = {};
+            
+            document.getElementById('current-round-display').textContent = data.round;
+            document.getElementById('max-round-display').textContent = data.maxRounds;
+            document.getElementById('game-letter-display').textContent = data.letter;
+            
+            // Build inputs
+            const container = document.getElementById('game-inputs-container');
+            container.innerHTML = '';
+            
+            Object.entries(data.categories).forEach(([key, label]) => {
+                const div = document.createElement('div');
+                div.className = 'game-row flex items-baseline gap-2 mb-2';
+                const labelClass = key === 'bonus' ? 'text-orange-600 font-bold' : 'text-gray-700';
+                const icon = key === 'bonus' ? '<i class="fa-solid fa-star text-xs mr-1"></i>' : '';
+                
+                div.innerHTML = `
+                    <label class="${labelClass} text-xl w-32 text-right">${icon}${label}:</label>
+                    <input type="text" class="line-input" data-cat="${key}" autocomplete="off" 
+                           oninput="onAnswerInput('${key}', this.value)">
+                `;
+                container.appendChild(div);
+            });
+            
+            // Timer
+            const stopBtn = document.getElementById('btn-game-stop');
+            const timerDisplay = document.getElementById('stop-timer-display');
+            
+            stopBtn.disabled = true;
+            timerDisplay.style.opacity = '1';
+            
+            let timeLeft = data.minTime;
+            timerDisplay.textContent = timeLeft;
+            
+            if (stopTimer) clearInterval(stopTimer);
+            
+            stopTimer = setInterval(() => {
+                timeLeft--;
+                timerDisplay.textContent = timeLeft;
+                
+                if (timeLeft <= 0) {
+                    clearInterval(stopTimer);
+                }
+            }, 1000);
+            
+            updateGameSidebar();
+            router.go('game');
+        }
+        
+        function onAnswerInput(category, value) {
+            localAnswers[category] = value;
+            socket.emit('player:typing', { category });
+            
+            // Debounced submit
+            clearTimeout(window.submitTimeout);
+            window.submitTimeout = setTimeout(() => {
+                socket.emit('answers:submit', { answers: localAnswers });
+            }, 500);
+        }
+        
+        function stopRound() {
+            socket.emit('round:stop');
+        }
+        
+        function showCountdown(stoppedBy, seconds) {
+            const overlay = document.getElementById('countdown-overlay');
+            const numberEl = document.getElementById('countdown-number');
+            const textEl = document.getElementById('stopped-by-text');
+            
+            overlay.classList.remove('hidden');
+            textEl.textContent = stoppedBy + ' დააჭირა STOP-ს';
+            
+            // Disable all inputs
+            document.querySelectorAll('#game-inputs-container input').forEach(inp => {
+                inp.disabled = true;
+                inp.parentElement.classList.add('opacity-50');
+            });
+            document.getElementById('btn-game-stop').disabled = true;
+            
+            let count = seconds;
+            numberEl.textContent = count;
+            
+            const countInterval = setInterval(() => {
+                count--;
+                if (count > 0) {
+                    numberEl.textContent = count;
+                    numberEl.style.animation = 'none';
+                    setTimeout(() => numberEl.style.animation = 'countPop 1s ease-out', 10);
+                } else {
+                    clearInterval(countInterval);
+                    overlay.classList.add('hidden');
+                }
+            }, 1000);
+            
+            // Final submit
+            socket.emit('answers:submit', { answers: localAnswers });
+        }
+        
+        function updateGameSidebar() {
+            if (!roomData) return;
+            
+            const sidebar = document.getElementById('game-players-sidebar');
+            sidebar.innerHTML = '';
+            
+            roomData.players.forEach(player => {
+                if (player.id === currentPlayerId) return;
+                
+                const div = document.createElement('div');
+                div.className = 'relative';
+                div.innerHTML = `
+                    <div class="w-12 h-12 rounded-full border-2 ${player.isConnected ? 'border-gray-400' : 'border-red-400'} bg-white shadow-md relative group" data-player-id="${player.id}">
+                        <img src="https://api.dicebear.com/9.x/notionists-neutral/svg?seed=${encodeURIComponent(player.avatarSeed)}" class="w-full h-full">
+                        <div class="absolute left-14 top-2 bg-black text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition shadow-lg whitespace-nowrap">${player.nick}</div>
+                    </div>
+                    <div class="typing-indicator absolute -bottom-1 -right-1 hidden" data-typing-indicator="${player.id}">
+                        <span></span><span></span><span></span>
+                    </div>
+                `;
+                sidebar.appendChild(div);
+            });
+        }
+        
+        function updateTypingIndicator(playerId, category) {
+            const indicator = document.querySelector(`[data-typing-indicator="${playerId}"]`);
+            if (indicator) {
+                indicator.classList.remove('hidden');
+                clearTimeout(indicator.timeout);
+                indicator.timeout = setTimeout(() => {
+                    indicator.classList.add('hidden');
+                }, 1000);
+            }
+        }
+        
+        function updatePlayerSubmitted(playerId) {
+            const avatar = document.querySelector(`[data-player-id="${playerId}"]`);
+            if (avatar) {
+                avatar.classList.add('border-green-500');
+            }
+        }
+        
+        // ============== RESULTS ==============
+        function showResultsUI(data) {
+            document.getElementById('back-to-lobby-btn').classList.toggle('hidden', !isHost);
+            document.getElementById('next-round-btn').classList.toggle('hidden', !isHost);
+            
+            if (data.isLastRound) {
+                document.getElementById('next-round-btn').innerHTML = 'თამაშის დასრულება <i class="fa-solid fa-flag-checkered ml-2"></i>';
+            } else {
+                document.getElementById('next-round-btn').innerHTML = 'შემდეგი რაუნდი <i class="fa-solid fa-arrow-right ml-2"></i>';
+            }
+            
+            renderPlayerReview();
+            router.go('results');
+        }
+        
+        function prevPlayer() {
+            if (reviewIndex > 0) {
+                reviewIndex--;
+                renderPlayerReview();
+            }
+        }
+        
+        function nextPlayer() {
+            if (reviewIndex < resultsData.results.length - 1) {
+                reviewIndex++;
+                renderPlayerReview();
+            }
+        }
+        
+        function renderPlayerReview() {
+            if (!resultsData || !resultsData.results[reviewIndex]) return;
+            
+            const player = resultsData.results[reviewIndex];
+            
+            document.getElementById('review-avatar').src = `https://api.dicebear.com/9.x/notionists-neutral/svg?seed=${encodeURIComponent(player.avatarSeed)}`;
+            document.getElementById('review-nick').textContent = player.nick;
+            document.getElementById('review-score').textContent = '+' + player.roundScore;
+            document.getElementById('review-crown').classList.toggle('hidden', !player.isHost);
+            
+            // Table
+            const container = document.getElementById('results-table');
+            container.innerHTML = `
+                <div class="flex justify-between border-b-2 border-indigo-900 pb-2 mb-2">
+                    <span class="font-bold text-lg w-1/4">კატეგორია</span>
+                    <span class="font-bold text-lg w-2/4">სიტყვა</span>
+                    <span class="font-bold text-red-600 text-lg w-1/4 text-right">ქულა</span>
+                </div>
+            `;
+            
+            Object.entries(resultsData.categories).forEach(([catKey, catName]) => {
+                const score = player.categoryScores ? player.categoryScores[catKey] : null;
+                const word = score ? score.answer : '';
+                const points = score ? (score.invalidatedBy ? 0 : score.points) : 0;
+                const isValid = score ? score.isValid && !score.invalidatedBy : false;
+                
+                const row = document.createElement('div');
+                row.className = 'result-row flex justify-between items-center py-3 border-b border-gray-300 cursor-pointer hover:bg-yellow-50 transition';
+                row.onclick = () => toggleAnswer(player.id, catKey);
+                
+                row.innerHTML = `
+                    <span class="text-lg w-1/4 truncate pr-2 text-gray-700" title="${catName}">${catName}</span>
+                    <span class="font-bold text-xl text-indigo-900 w-2/4 word-text ${isValid ? '' : 'word-invalid'}">${word || '-'}</span>
+                    <span class="text-red-600 font-bold text-xl w-1/4 text-right">${points}</span>
+                `;
+                
+                container.appendChild(row);
+            });
+        }
+        
+        function toggleAnswer(playerId, category) {
+            socket.emit('answer:invalidate', { targetPlayerId: playerId, category });
+        }
+        
+        function nextRound() {
+            if (!isHost) return;
+            socket.emit('game:nextRound');
+        }
+        
+        function returnToLobby() {
+            if (!isHost) return;
+            socket.emit('game:returnToLobby');
+        }
+        
+        // ============== FINAL STANDINGS ==============
+        function showFinalStandings(standings) {
+            const podium = document.getElementById('podium-container');
+            const list = document.getElementById('final-standings');
+            
+            // Podium (top 3)
+            podium.innerHTML = '';
+            const places = ['second', 'first', 'third'];
+            
+            for (let i = 0; i < Math.min(3, standings.length); i++) {
+                const player = standings[i];
+                const placeIndex = i === 0 ? 1 : i === 1 ? 0 : 2;
+                
+                const div = document.createElement('div');
+                div.className = `podium-place ${places[placeIndex]}`;
+                div.innerHTML = `
+                    <div class="w-16 h-16 rounded-full bg-white border-2 border-white overflow-hidden mb-2">
+                        <img src="https://api.dicebear.com/9.x/notionists-neutral/svg?seed=${encodeURIComponent(player.avatarSeed)}" class="w-full h-full">
+                    </div>
+                    <div class="text-lg font-bold">${player.nick}</div>
+                    <div class="text-2xl font-bold">${player.totalScore}</div>
+                    <div class="text-3xl mt-2">${i === 0 ? '🥇' : i === 1 ? '🥈' : '🥉'}</div>
+                `;
+                podium.appendChild(div);
+            }
+            
+            // Full list
+            list.innerHTML = '<h3 class="text-xl font-bold mb-4 text-center">სრული რეიტინგი</h3>';
+            
+            standings.forEach((player, idx) => {
+                const row = document.createElement('div');
+                row.className = 'flex items-center gap-4 py-2 border-b border-gray-200';
+                row.innerHTML = `
+                    <span class="text-2xl font-bold w-8 text-center">${idx + 1}</span>
+                    <div class="w-10 h-10 rounded-full bg-white border-2 border-gray-300 overflow-hidden">
+                        <img src="https://api.dicebear.com/9.x/notionists-neutral/svg?seed=${encodeURIComponent(player.avatarSeed)}" class="w-full h-full">
+                    </div>
+                    <span class="flex-1 font-bold text-lg">${player.nick}</span>
+                    <span class="text-xl font-bold text-indigo-600">${player.totalScore} ქულა</span>
+                `;
+                list.appendChild(row);
+            });
+            
+            document.getElementById('ended-back-btn').classList.toggle('hidden', !isHost);
+            router.go('ended');
+        }
+        
+        // ============== MODALS ==============
+        function toggleBonusInfo() {
+            document.getElementById('info-modal').classList.remove('hidden');
+        }
+        
+        function closeBonusInfo() {
+            document.getElementById('info-modal').classList.add('hidden');
+        }
+        
+        // ============== INITIALIZATION ==============
+        // Connect on load
+        connectSocket();
+        updateAvatarPreview();
+        
+        // Preload GIF
+        const sticksGif = document.getElementById('sticks-gif');
+        if (sticksGif) {
+            const preloadImg = new Image();
+            preloadImg.src = 'hand_writing.gif';
+        }
+    </script>
+</body>
+</html>
